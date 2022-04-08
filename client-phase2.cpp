@@ -1,7 +1,3 @@
-/*
-** pollserver.c -- a cheezy multiperson chat server
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,29 +11,13 @@
 #include <fstream>
 #include <bits/stdc++.h>
 #include <dirent.h>
-
 using namespace std;
 
 #define LOOPBACK "127.0.0.1"
-// #define PORT "9034"   // Port we're listening on
-
-string exec(const char* cmd) {
-    array<char, 128> buffer;
-    string result;
-    unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-    if (!pipe) {
-        throw runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-    return result;
-}
 
 int input(ifstream &file, int &id, int &unique_id, int &my_port, int &no_neighbors, int &no_files, vector<string> *file_names,
     vector<vector<int>> *neighbors)
     {
-    
     file >> id;
     // cout<<id<<" ";
     file >> my_port;
@@ -68,15 +48,17 @@ int input(ifstream &file, int &id, int &unique_id, int &my_port, int &no_neighbo
     return 0;
 }
 
-void listFiles(const char* dirname){
+void listFiles(const char* dirname,vector<string> *my_files){
     DIR *dir;
     struct dirent *ent;
     if ((dir = opendir (dirname)) != NULL) {
     /* print all the files and directories within directory */
     while ((ent = readdir (dir)) != NULL) {
         string d_name = ent->d_name;
-        if (d_name != "." && d_name != "..")  
+        if (d_name != "." && d_name != ".." && d_name!="Downloaded") { 
+            my_files->push_back(ent->d_name);
             printf ("%s\n", ent->d_name);
+        }
     }
     closedir (dir);
     } else {
@@ -85,17 +67,6 @@ void listFiles(const char* dirname){
         return;
     }
 }
-
-// Get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
-
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
-
 // Return a listening socket
 int get_listener_socket(const char* IP, const char* PORT)
 {
@@ -171,7 +142,6 @@ void del_from_pfds(struct pollfd pfds[], int i, int *fd_count)
 
     (*fd_count)--;
 }
-
 // Main
 int main(int argc, char *argv[])
 {
@@ -190,14 +160,12 @@ int main(int argc, char *argv[])
     vector<vector<int>> neighbors;
     
     vector<string> file_names;
+    vector<string> my_files;
     // Take input
     input(file, id, unique_id, my_port, no_neighbors, no_files, &file_names, &neighbors);
-
+    listFiles(argv[2],&my_files);
     // Connection vector
     vector<bool> connected(neighbors.size(), false);
-
-    // Search request sent to the neighbor
-    vector<bool> sentSearchReq(neighbors.size(), false);
 
     // Received answer from the neighbor ? vector<bool> is the bitmap for the files (0 if neighbor has it and vice-versa)
     map<int, pair<bool, vector<bool>>> receivedAns;
@@ -208,14 +176,15 @@ int main(int argc, char *argv[])
     // Mapping ids to unique id and socket descriptor
     map<int, pair<int, int>> mapfd;
 
-    // // List all the files in the given directory 
+    // List all the files in the given directory 
     // listFiles(argv[2]);
     int listener;     // Listening socket descriptor
 
     int newfd;        // Newly accept()ed socket descriptor
     struct sockaddr_storage remoteaddr; // Client address
     socklen_t addrlen;
-
+    int total_msg_sent=0;
+    bool allSend=false;
     char buf[256];    // Buffer for client data
 
     char remoteIP[INET6_ADDRSTRLEN];
@@ -244,7 +213,6 @@ int main(int argc, char *argv[])
     // conDetails = true if we've printed the connection details 
     // allConnected = true if all the connections have been made
     bool allConnected = false, conDetails = false;
-    // cout<<neighbors.size()<<"\n";
 
     // Main loop
     for(;;) {
@@ -269,7 +237,7 @@ int main(int argc, char *argv[])
                     hints.ai_family = AF_UNSPEC;
                     hints.ai_socktype = SOCK_STREAM;
 
-                    if ((status = getaddrinfo("127.0.0.1", to_string(neighbors[i][1]).c_str(), &hints, &res)) != 0) {
+                    if ((status = getaddrinfo(LOOPBACK, to_string(neighbors[i][1]).c_str(), &hints, &res)) != 0) {
                         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
                         return 2;
                     }
@@ -285,9 +253,9 @@ int main(int argc, char *argv[])
                         allSuccess = false;
                         // perror("connect");
                     }
-                }               
+                }
             }
-            allConnected = allSuccess;   
+            allConnected = allSuccess;
         } else if (!conDetails){
             // Check if all the neighbors have sent their unique ids
             vector<int> neighIDs;
@@ -301,29 +269,22 @@ int main(int argc, char *argv[])
             }
             // Print the neighbor details
             if (haveAllInfo){
-                for (int i=0;i<neighbors.size();i++){
-                    if (!sentSearchReq[i]){
-                        string msg = "1 ";
-                        msg += to_string(id);
-                        msg += " ";
-                        for (int j=0;j<file_names.size();j++){
-                            msg += file_names[j];
-                            msg += " ";
+                sort(neighIDs.begin(), neighIDs.end());
+                for (int i=0;i<neighIDs.size();i++){
+                    for (int j=0;j<neighbors.size();j++){
+                        if (neighbors[j][0] == neighIDs[i]){
+                            cout<<"Connected to "<<neighIDs[i]<<" with unique-ID "<<neighbors[j][2]<<" on port "<<neighbors[j][1]<<"\n";
                         }
-                        char *m = &msg[0];
-                        if (send(mapfd[neighbors[i][0]].second, m, strlen(m), 0) == -1){
-                            perror("send");
-                            continue;
-                        }
-                        sentSearchReq[i] = true;
                     }
                 }
+                conDetails = true;
+
                 bool receivedAll = true;
                 for (auto it : receivedAns){
                     if (it.second.first == false){
                         receivedAll = false;
                         break;
-                    }   
+                    }
                 }
                 conDetails = receivedAll;
                 
@@ -352,6 +313,9 @@ int main(int argc, char *argv[])
                         }
                     }
                     conDetails = true;
+                    if(allConnected && allSend){
+                        exit(1);
+                    }
                 }
             }
         }
@@ -373,17 +337,26 @@ int main(int argc, char *argv[])
                         perror("accept");
                     } else {
                         add_to_pfds(&pfds, newfd, &fd_count, &fd_size);
-                        // Msg = "0 id unique_id"
-                        string msg = "0 ";
+                        string msg;
                         msg += to_string(id);
                         msg += " ";
                         msg += to_string(unique_id);
+                        for(int i=0;i<my_files.size();i++){
+                            msg += " ";
+                            msg += my_files[i];
+                        }
                         char* m = &msg[0];
                         if (send(newfd, m, strlen(m), 0) == -1){
                             perror("send");
                         }
+                        total_msg_sent+=1;
+                        if(total_msg_sent==no_neighbors){
+                            allSend=true;
+                            if(allConnected && conDetails){exit(1);}
+                        }
                     }
-                } else {
+                } 
+                else {
                     // If not the listener, we're just a regular client
                     int nbytes = recv(pfds[i].fd, buf, sizeof buf, 0);
                     buf[nbytes] = '\0';
@@ -395,7 +368,7 @@ int main(int argc, char *argv[])
                             // Connection closed
                             // printf("pollserver: socket %d hung up\n", sender_fd);
                         } else {
-                            perror("recv");
+                            //perror("recv");
                         }
 
                         close(pfds[i].fd); // Bye!
@@ -413,48 +386,24 @@ int main(int argc, char *argv[])
                             seglist.push_back(segment);
                         }
                         int nid, nunique, msg_type;
-                        // cout<<seglist[1]<<"\n";
-                        msg_type = stoi(seglist[0]);
-                        if (msg_type == 0) {   
-                            nid = stoi(seglist[1]);
-                            nunique = stoi(seglist[2]);
-                            for (int i=0;i<neighbors.size();i++){
-                                // Push unique id of the neighbor
-                                if (neighbors[i][0] == nid){
-                                    neighbors[i].push_back(nunique);
-                                    mapfd[nid].first = nunique;
+                        nid = stoi(seglist[0]);
+                        nunique = stoi(seglist[1]);
+                        for (int i=0;i<neighbors.size();i++){
+                            // Push unique id of the neighbor
+                            if (neighbors[i][0] == nid){
+                                neighbors[i].push_back(nunique);
+                                mapfd[nid].first = nunique;
+                                receivedAns[nid].first = true; //set I have recieved response from this id
+                            }
+                        }
+                        //check the recieved file names are demanded by client?if yes add them
+                        for(int i=2;i<seglist.size();i++){
+                            for (int j=0;j<no_files;j++){
+                                if(file_names[j]==seglist[i]){
+                                    receivedAns[nid].second[j] =true;
                                 }
                             }
                         }
-                        else if (msg_type == 1){
-                            // cout<<buf<<"\n";
-                            nid = stoi(seglist[1]);
-                            string retmsg = "2 ";
-                            retmsg += to_string(id);
-                            retmsg += " ";
-                            for (int i=2;i<seglist.size();i++){
-                                string cmd = "find ";
-                                cmd += argv[2];
-                                cmd += " -name ";
-                                cmd += seglist[i];
-                                if (exec(cmd.c_str()) == ""){
-                                    retmsg += "0";
-                                } else {
-                                    retmsg += "1";
-                                }
-                            }
-                            if (send(pfds[i].fd, &retmsg[0], retmsg.length(), 0) == -1){
-                                perror("send");
-                            }
-                        }
-                        else if (msg_type == 2){
-                            nid = stoi(seglist[1]);
-                            receivedAns[nid].first = true;
-                            for (int i=0;i<no_files;i++){
-                                receivedAns[nid].second[i] = seglist[2][i] == '0' ? false : true;
-                            }
-                            // cout<<buf<<"\n";
-                        }   
                     }
                 } 
             }
@@ -463,3 +412,37 @@ int main(int argc, char *argv[])
     
     return 0;
 }
+
+
+
+
+
+
+
+// string exec(const char* cmd) {
+//     array<char, 128> buffer;
+//     string result;
+//     unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+//     if (!pipe) {
+//         throw runtime_error("popen() failed!");
+//     }
+//     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+//         result += buffer.data();
+//     }
+//     return result;
+// }
+
+
+// //phase-3 addition
+// void send_file(FILE *fp, int sockfd){
+//   int n;
+//   char data[SIZE] = {0};
+ 
+//   while(fgets(data, SIZE, fp) != NULL) {
+//     if (send(sockfd, data, sizeof(data), 0) == -1) {
+//       perror("[-]Error in sending file.");
+//       exit(1);
+//     }
+//     bzero(data, SIZE);
+//   }
+// }

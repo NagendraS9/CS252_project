@@ -1,7 +1,3 @@
-/*
-** pollserver.c -- a cheezy multiperson chat server
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -71,16 +67,6 @@ void listFiles(const char* dirname){
         perror ("");
         return;
     }
-}
-
-// Get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
-
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
 // Return a listening socket
@@ -241,7 +227,7 @@ int main(int argc, char *argv[])
                     hints.ai_family = AF_UNSPEC;
                     hints.ai_socktype = SOCK_STREAM;
 
-                    if ((status = getaddrinfo("127.0.0.1", to_string(neighbors[i][1]).c_str(), &hints, &res)) != 0) {
+                    if ((status = getaddrinfo(LOOPBACK, to_string(neighbors[i][1]).c_str(), &hints, &res)) != 0) {
                         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
                         return 2;
                     }
@@ -258,7 +244,7 @@ int main(int argc, char *argv[])
                     }
                 }               
             }
-            allConnected = allSuccess;   
+            allConnected = allSuccess; 
         } else if (!conDetails){
             // Check if all the neighbors have sent their unique ids
             vector<int> neighIDs;
@@ -283,6 +269,9 @@ int main(int argc, char *argv[])
                 conDetails = true;
             }
         }
+        if(conDetails && allConnected){
+            exit(0);
+        }
         // Run through the existing connections looking for data to read
         for(int i = 0; i < fd_count; i++) {
 
@@ -298,7 +287,8 @@ int main(int argc, char *argv[])
                         &addrlen);
 
                     if (newfd == -1) {
-                        perror("accept");
+                        //perror("accept");
+                        continue;
                     } else {
                         add_to_pfds(&pfds, newfd, &fd_count, &fd_size);
                         // Msg = "0 id unique_id"
@@ -321,7 +311,8 @@ int main(int argc, char *argv[])
                         // Got error or connection closed by client
                         if (nbytes == 0) {
                             // Connection closed
-                            printf("pollserver: socket %d hung up\n", sender_fd);
+                            continue;
+                            // printf("pollserver: socket %d hung up\n", sender_fd);
                         } else {
                             perror("recv");
                         }
