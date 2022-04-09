@@ -1,0 +1,7 @@
+1 5000 6931
+3
+2 6000 3 7000 4 8000 
+3
+oppk.txt
+queries
+another.txt

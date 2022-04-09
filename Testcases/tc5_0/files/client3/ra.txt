@@ -1,0 +1,20 @@
+τ player.player_name (π player.player_name (σ player.player_id = ball_by_ball.bowler ∧ ball_by_ball.extra_runs>2 (player ⨯ ball_by_ball)))
+
+τ player.player_name (π player.player_id, player.player_name (σ player.player_id = player_match.player_id ∧ player.country_name = 'Australia' ∧ (player_match.role_desc = 'Captain' ∨ player_match.role_desc = 'CaptainKeeper') (player ⨯ player_match)))
+
+a = ρ a (π match.match_id (match ⨝ (match.venue_Id = venue.venue_id ∧ venue.venue_name = 'Eden Gardens') venue))
+b = ρ b (π player.player_name, player_match.match_id (player ⨝ (player.player_id = player_match.player_id ∧ player.country_name != 'India') player_match))
+π b.player_name (a ⨝ a.match_id = b.match_id b)
+
+a = ρ a (π player_id (σ country_name = 'Sri Lanka' (player)))
+b = ρ b (π striker ball_by_ball)
+c = ρ c (a - b)
+π player.player_name (c ⨝ c.player_id = player.player_id player)
+
+mc17 = ρ mc17 (π match_id (σ season_year=2017 match))
+ro = ρ ro (π match_id, striker σ out_type='run out' (ball_by_ball))
+bo = ρ bo (π match_id, striker σout_type='bowled' (ball_by_ball))
+ro17 = ρ ro17 (π ro.striker (ro ⨝ ro.match_id = mc17.match_id mc17))
+bo17 = ρ bo17 (π bo.striker (bo ⨝ bo.match_id = mc17.match_id mc17))
+lst = ρ lst (ro17 ∩ bo17)
+π player_name (lst ⨝ lst.striker = player.player_id player)

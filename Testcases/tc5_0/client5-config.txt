@@ -1,0 +1,7 @@
+5 9000 1650
+2
+2 6000 3 7000 
+3
+queries
+bar.pdf
+ra_final

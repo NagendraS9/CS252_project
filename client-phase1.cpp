@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 
     // Set up and get a listening socket
     listener = get_listener_socket(LOOPBACK, (to_string(my_port)).c_str());
-
+    // cout<<my_port<<"\n";
     if (listener == -1) {
         fprintf(stderr, "error getting listening socket\n");
         exit(1);
@@ -269,9 +269,9 @@ int main(int argc, char *argv[])
                 conDetails = true;
             }
         }
-        if(conDetails && allConnected){
-            exit(0);
-        }
+        // if(conDetails && allConnected){
+        //     exit(0);
+        // }
         // Run through the existing connections looking for data to read
         for(int i = 0; i < fd_count; i++) {
 

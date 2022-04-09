@@ -1,0 +1,293 @@
+    player_name    
+-------------------
+ AD Nath
+ AR Bawne
+ AR Patel
+ AS Rajpoot
+ Ankit Soni
+ Avesh Khan
+ BB Sran
+ Basil Thampi
+ DJ Hooda
+ DL Chahar
+ GH Vihari
+ HH Pandya
+ Harmeet Singh
+ Ishan Kishan
+ J Suchith
+ JJ Bumrah
+ KC Cariappa
+ KL Rahul
+ Kuldeep Yadav
+ M Vohra
+ Mohammed Siraj
+ N Rana
+ NB Singh
+ NS Naik
+ P Negi
+ R Tewatia
+ RD Chahar
+ RG More
+ RR Pant
+ S Gopal
+ S Kaushik
+ SN Khan
+ SS Agarwal
+ SS Iyer
+ SV Samson
+ Sandeep Sharma
+ Shivam Sharma
+ Tejas Baroka
+ UBT Chand
+ V Pratap Singh
+ VH Zol
+ Vishnu Vinod
+ Washington Sundar
+(43 rows)
+
+  player_name   
+----------------
+ A Nehra
+ AB Dinda
+ AG Murtaza
+ AN Ahmed
+ AUK Pathan
+ B Kumar
+ DJ Muthuswami
+ HV Patel
+ IC Pandey
+ JA Morkel
+ JDP Oram
+ JJ Bumrah
+ M Morkel
+ MG Johnson
+ PJ Cummins
+ PP Chawla
+ PP Ojha
+ R Ashwin
+ RG More
+ RP Singh
+ RS Bopara
+ S Kaushik
+ S Sreesanth
+ SB Jakati
+ SK Warne
+ SP Narine
+ Sandeep Sharma
+ WD Parnell
+(28 rows)
+
+          team_name          | win_margin 
+-----------------------------+------------
+ Delhi Daredevils            |         97
+ Chennai Super Kings         |         45
+ Mumbai Indians              |         44
+ Sunrisers Hyderabad         |         35
+ Rajasthan Royals            |         26
+ Sunrisers Hyderabad         |         22
+ Rajasthan Royals            |         19
+ Kings XI Punjab             |         18
+ Royal Challengers Bangalore |         15
+(9 rows)
+
+ player_id | player_name  
+-----------+--------------
+        53 | AC Gilchrist
+       187 | DA Warner
+       197 | GJ Bailey
+       305 | GJ Maxwell
+         3 | RT Ponting
+        38 | SK Warne
+        32 | SR Watson
+(7 rows)
+
+ player_name  
+--------------
+ DA Warner
+ GJ Bailey
+ GJ Maxwell
+ R Dravid
+ SK Warne
+ SPD Smith
+ SR Tendulkar
+(7 rows)
+
+   player_name    
+------------------
+ A Mishra
+ AB de Villiers
+ AC Gilchrist
+ AJ Finch
+ AL Menaria
+ AM Rahane
+ AT Rayudu
+ B Chipli
+ BB McCullum
+ BJ Hodge
+ CH Gayle
+ DA Warner
+ DB Ravi Teja
+ DH Yagnik
+ DJ Hussey
+ DJ Jacobs
+ DPMD Jayawardene
+ DT Christian
+ EJG Morgan
+ G Gambhir
+ Harbhajan Singh
+ J Botha
+ JA Morkel
+ JH Kallis
+ JP Duminy
+ KA Pollard
+ KD Karthik
+ LRPL Taylor
+ M Manhas
+ M Morkel
+ M Vijay
+ MA Agarwal
+ MC Juneja
+ MD Mishra
+ MEK Hussey
+ MK Tiwary
+ MR Marsh
+ MS Dhoni
+ NLTC Perera
+ NV Ojha
+ PC Valthaty
+ R Dravid
+ R McLaren
+ R Sharma
+ RA Jadeja
+ RG Sharma
+ RT Ponting
+ RV Uthappa
+ S Anirudha
+ S Dhawan
+ SR Tendulkar
+ STR Binny
+ Sunny Singh
+ TM Dilshan
+ UBT Chand
+ V Kohli
+ V Sehwag
+ VVS Laxman
+ Y Venugopal Rao
+ YK Pathan
+ Yuvraj Singh
+(61 rows)
+
+  player_name  
+---------------
+ JJ Bumrah
+ R Vinay Kumar
+(2 rows)
+
+   player_name    
+------------------
+ AB de Villiers
+ AD Russell
+ AJ Finch
+ B Lee
+ BB McCullum
+ CH Gayle
+ CJ Anderson
+ DA Warner
+ DJ Bravo
+ DJG Sammy
+ DPMD Jayawardene
+ DR Smith
+ DT Christian
+ DW Steyn
+ EJG Morgan
+ F du Plessis
+ GB Hogg
+ J Botha
+ JH Kallis
+ JP Duminy
+ KA Pollard
+ KC Sangakkara
+ M Morkel
+ PJ Cummins
+ RN ten Doeschate
+ SA Abbott
+ SL Malinga
+ SP Narine
+ Shakib Al Hasan
+(29 rows)
+
+      team_name      
+---------------------
+ Chennai Super Kings
+ Kings XI Punjab
+ Rajasthan Royals
+(3 rows)
+
+ player_name  | country_name 
+--------------+--------------
+ AD Mathews   | Sri Lanka
+ DL Vettori   | New Zealand
+ JP Duminy    | South Africa
+ SK Raina     | India
+ SK Warne     | Australia
+ SR Watson    | Australia
+ Yuvraj Singh | India
+ Z Khan       | India
+(8 rows)
+
+ player_name  
+--------------
+ AC Gilchrist
+ AM Nayar
+ AR Patel
+ BA Stokes
+ DA Miller
+ N Rana
+ PA Patel
+ RR Pant
+(8 rows)
+
+   player_name   
+-----------------
+ BAW Mendis
+ CK Kapugedera
+ CRD Fernando
+ DNT Zoysa
+ KMDN Kulasekara
+ LPC Silva
+ M Muralitharan
+ S Randiv
+ SL Malinga
+ SMSM Senanayake
+ ST Jayasuriya
+ T Thushara
+ WPUJC Vaas
+(13 rows)
+
+        team_name        
+-------------------------
+ Rising Pune Supergiants
+ Pune Warriors
+ Delhi Daredevils
+ Chennai Super Kings
+ Kings XI Punjab
+ Kolkata Knight Riders
+ Gujarat Lions
+ Rajasthan Royals
+ Kochi Tuskers Kerala
+ Deccan Chargers
+(10 rows)
+
+ player_name 
+-------------
+ RR Pant
+(1 row)
+
+      team_name       
+----------------------
+ Chennai Super Kings
+ Gujarat Lions
+ Kochi Tuskers Kerala
+ Deccan Chargers
+(4 rows)
+

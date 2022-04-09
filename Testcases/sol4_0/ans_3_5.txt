@@ -1,0 +1,17 @@
+another.txt
+DDL_olympics_new.sql
+f1.txt
+file.cpp
+foo.png
+lab4db.ddl
+o2
+op.txt
+oppk.txt
+queries
+random.py
+ra_final
+run.sh
+temp.c
+Connected to 1 with unique-ID 2095 on port 5000
+Connected to 4 with unique-ID 5101 on port 8000
+Found temp.cpp at 2095 with MD5 a324068229115b95a1ecd2d0f6937030 at depth 1

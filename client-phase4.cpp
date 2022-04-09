@@ -175,9 +175,6 @@ int main(int argc, char *argv[])
 
     // Mapping ids to unique id and socket descriptor
     map<int, pair<int, int>> mapfd;
-
-    // List all the files in the given directory 
-    // listFiles(argv[2]);
     int listener;     // Listening socket descriptor
 
     int newfd;        // Newly accept()ed socket descriptor
@@ -228,7 +225,7 @@ int main(int argc, char *argv[])
 
     // Maps each file to a boolean and the set of ids where it has been found
     map<string, pair<bool, set<int>>> ffound;
-
+    // cout<<"Hi\n";
     // Depths of the files
     map<string, int> file_depths;
     for (int i=0;i<no_files;i++){
@@ -237,6 +234,10 @@ int main(int argc, char *argv[])
 
     // The neighbors to which our reply is pending to their search request of searching our neighbors
     vector<pair<int, vector<string>>> toSend;
+    int totalConfirmations = 0, totalNNConfirmations = 0, totalNN = 0;
+    bool notSentNNConfirmation = true;
+    bool printedConnectionInfo = false;
+    bool haveAllInfo = false;
 
     // Main loop
     for(;;) {
@@ -247,6 +248,26 @@ int main(int argc, char *argv[])
             // cout<<"POLL\n";
             exit(1);
         }
+
+        if (totalConfirmations == no_neighbors && notSentNNConfirmation){
+            string msg = "4 ";
+            msg += to_string(id);
+            for (auto it : mapfd){
+                if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
+                    perror("NNConfirm send");
+                }
+            }
+            notSentNNConfirmation = false;
+        }
+
+        if (totalConfirmations == no_neighbors && totalNNConfirmations == no_neighbors && haveAllInfo){
+            // cout<<"HI\n";
+            // for (auto it : mapfd){
+            //     close(it.second.second);
+            // }
+            exit(1);
+        }
+
 
         // Basically the part which tries to send reply to the neighbors if it has its neighbors files
         if (haveNeighborFiles){
@@ -275,8 +296,8 @@ int main(int argc, char *argv[])
                         msg += " 0";
                     }
                 }
-                if (send(mapfd[toSend[i].first].second, &msg[0], msg.length(), 0) == -1){
-                    perror("270: send");
+                if (send(mapfd[toSend[i].first].second, msg.c_str(), msg.length(), 0) == -1){
+                    perror("NN search");
                 }
             }
             // cout<<"Sent back\n";
@@ -317,18 +338,32 @@ int main(int argc, char *argv[])
             }
             allConnected = allSuccess;
         } else if (!conDetails){
+            vector<int> neighIDs;
             // Check if all the neighbors have sent their unique ids
-            bool haveAllInfo = true;
+            bool temp = true;
             for (int i=0;i<neighbors.size();i++){
                 if (neighbors[i].size() != 3){
-                    haveAllInfo = false;
+                    temp = false;
                     break;
                 }
+                neighIDs.push_back(neighbors[i][0]);
             }
 
+            haveAllInfo = temp;
             // Print the neighbor details
             if (haveAllInfo){
-
+                if (!printedConnectionInfo){   
+                    sort(neighIDs.begin(), neighIDs.end());
+                    for (int i=0;i<neighIDs.size();i++){
+                        for (int j=0;j<neighbors.size();j++){
+                            if (neighbors[j][0] == neighIDs[i]){
+                                cout<<"Connected to "<<neighIDs[i]<<" with unique-ID "<<neighbors[j][2]<<" on port "<<neighbors[j][1]<<"\n";
+                                break;
+                            }
+                        }
+                    }
+                    printedConnectionInfo = true;
+                }
                 bool receivedAll = true;
                 bool receivedNN = true;
                 for (auto it : receivedAns){
@@ -348,7 +383,7 @@ int main(int argc, char *argv[])
 
                 // All the neighbors have answered so we have details about files of their neighbors;
                 haveNeighborFiles = receivedAll;
-
+                
                 // Initially we check if our neighbors have the files
                 if (!askNeighbor && receivedAll){
                     
@@ -374,7 +409,7 @@ int main(int argc, char *argv[])
                             }
                             for (auto it : mapfd){
                                 // cout<<"Asking "<<it.first<<"\n";
-                                if (send(it.second.second, &msg[0], msg.length(), 0) == -1){
+                                if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
                                     perror("send");
                                 }
                             }
@@ -393,6 +428,13 @@ int main(int argc, char *argv[])
                             cout<<"Found "<<it.first<<" at "<<*(ffound[it.first].second.begin())<<" with MD5 0 at depth 1\n";
                         }
                         conDetails = true;
+                        string msg = "3 ";
+                        msg += to_string(id);
+                        for (auto it : mapfd){
+                            if (send(mapfd[it.first].second, msg.c_str(), msg.length(), 0) == -1){
+                                perror("Line 422");
+                            }
+                        }
                     }
 
                 }
@@ -422,10 +464,21 @@ int main(int argc, char *argv[])
                             cout<<"Found "<<it.first<<" at 0 with MD5 0 at depth 0\n";
                         }
                     }
+
+                    string msg = "3 ";
+                    msg += to_string(id);
+                    for (auto it : mapfd){
+                        
+                        if (send(mapfd[it.first].second, msg.c_str(), msg.length(), 0) == -1){
+                            perror("Line 458");
+                        }
+                    }
                     conDetails = true;
                 }
             }
         }
+
+
         // Run through the existing connections looking for data to read
         for(int i = 0; i < fd_count; i++) {
 
@@ -452,8 +505,9 @@ int main(int argc, char *argv[])
                             msg += " ";
                             msg += my_files[j];
                         }
-                        char* m = &msg[0];
-                        if (send(newfd, m, strlen(m), 0) == -1){
+                        
+                        // cout<<"Line 465: "<<msg<<"\n";
+                        if (send(newfd, msg.c_str(), msg.length(), 0) == -1){
                             perror("send");
                         }
                         total_msg_sent+=1;
@@ -479,7 +533,12 @@ int main(int argc, char *argv[])
                         }
 
                         close(pfds[i].fd); // Bye!
-
+                        // for (auto it : mapfd){
+                        //     if (it.second.second == pfds[i].fd){
+                        //         mapfd.erase(it.first);
+                        //         break;
+                        //     }
+                        // }
                         del_from_pfds(pfds, i, &fd_count);
 
                     } else {
@@ -492,12 +551,18 @@ int main(int argc, char *argv[])
                         {
                             seglist.push_back(segment);
                         }
+                        // cout<<"Line 505: "<<buf<<"\n";
                         int nid, nunique, msg_type;
+                        // cout<<"After this?\n";
                         msg_type = stoi(seglist[0]);
+                        // cout<<"Here?\n";
                         nid = stoi(seglist[1]);
-
+                        // cout<<"Or here\n";
                         // First message containing files of immediate neighbor
                         if (msg_type == 0) {    
+                            // cout<<"Or this?\n";
+                            // if (totalNN == -1) totalNN = 0;
+                            // totalNN += stoi(seglist[2]);
                             nunique = stoi(seglist[2]);
                             for (int j=0;j<neighbors.size();j++){
                                 // Push unique id of the neighbor
@@ -544,6 +609,7 @@ int main(int argc, char *argv[])
                                             }
                                         }
                                     }
+
                                     if (!whoHas.empty()){
                                         msg += " ";
                                         // Take the smallest unique id to transmit
@@ -553,7 +619,7 @@ int main(int argc, char *argv[])
                                         msg += " 0";
                                     }
                                 }
-                                if (send(pfds[i].fd, &msg[0], msg.length(), 0) == -1){
+                                if (send(pfds[i].fd, msg.c_str(), msg.length(), 0) == -1){
                                     perror("519: send");
                                 }
                             }
@@ -573,8 +639,15 @@ int main(int argc, char *argv[])
                             neighborsAnswered[nid].first = true;
                             for (int j=2;j<seglist.size();j++){
                                 // Unique id of client where it found the file
+                                // cout<<"hmm "<<seglist[j]<<"\n";
                                 neighborsAnswered[nid].second[j-2] = stoi(seglist[j]);
                             }
+                        }
+                        else if (msg_type == 3){
+                            totalConfirmations ++;
+                        }
+                        else if (msg_type == 4){
+                            totalNNConfirmations ++;
                         }
                     }
                 } 

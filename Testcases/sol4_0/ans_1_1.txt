@@ -1,0 +1,13 @@
+bar.pdf
+DDL_olympics_new.sql
+f1.txt
+file.cpp
+go.sh
+oppk.txt
+q1.cpp
+random.py
+run.sh
+temp.c
+temp.cpp
+Connected to 3 with unique-ID 8570 on port 7000
+Connected to 4 with unique-ID 5101 on port 8000

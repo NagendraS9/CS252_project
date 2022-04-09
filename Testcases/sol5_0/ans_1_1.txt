@@ -1,0 +1,19 @@
+bar.pdf
+DDL_olympics_new.sql
+file.cpp
+foo.png
+go.sh
+lab4db.ddl
+o2
+op.txt
+opda.txt
+q1.cpp
+ra.txt
+random.py
+ra_final
+run.sh
+temp.c
+temp.cpp
+Connected to 2 with unique-ID 9461 on port 6000
+Connected to 3 with unique-ID 4080 on port 7000
+Connected to 4 with unique-ID 8158 on port 8000

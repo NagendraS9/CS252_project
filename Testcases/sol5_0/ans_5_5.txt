@@ -1,0 +1,20 @@
+another.txt
+DDL_olympics_new.sql
+f1.txt
+file.cpp
+foo.png
+go.sh
+lab4db.ddl
+op.txt
+opda.txt
+q1.cpp
+ra.txt
+random.py
+run.sh
+temp.c
+temp.cpp
+Connected to 2 with unique-ID 9461 on port 6000
+Connected to 3 with unique-ID 4080 on port 7000
+Found bar.pdf at 6931 with MD5 fd6a970a6bd6a58598b55bba1c8974d4 at depth 2
+Found queries at 6931 with MD5 0c902f4a42de8386868257caf48241ec at depth 2
+Found ra_final at 9461 with MD5 68e92659622e17d91d7d82e7a8acc761 at depth 1

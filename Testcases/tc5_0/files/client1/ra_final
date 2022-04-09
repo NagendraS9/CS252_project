@@ -1,0 +1,7 @@
+τ player.player_name (π player.player_name (σ player.player_id = ball_by_ball.bowler ∧ ball_by_ball.extra_runs>2 (player ⨯ ball_by_ball)))
+
+τ player.player_name (π player.player_id, player.player_name (σ player.player_id = player_match.player_id ∧ player.country_name = 'Australia' ∧ (player_match.role_desc = 'Captain' ∨ player_match.role_desc = 'CaptainKeeper') (player ⨯ player_match)))
+
+π b.player_name ((ρ a (π match.match_id (match ⨝ (match.venue_id = venue.venue_id ∧ venue.venue_name = 'Eden Gardens') venue))) ⨝ a.match_id = b.match_id (ρ b (π player.player_name, player_match.match_id (player ⨝ (player.player_id = player_match.player_id ∧ player.country_name != 'India') player_match))))
+
+π player.player_name (ρ c ((π player_id (σ country_name = 'Sri Lanka' (player))) - (π striker ball_by_ball)) ⨝ c.player_id = player.player_id player)

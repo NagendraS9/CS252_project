@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
                             if (it.second.second[i]){
                                 found = true;
                                 ffound[file_names[i]].first = true;
-                                ffound[file_names[i]].second.insert(it.first);
+                                ffound[file_names[i]].second.insert(mapfd[it.first].first);
                             }
                         }
                         if (!found){
@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
                     }
                     for (auto it : ffound){
                         if (it.second.first){
-                            cout<<"Found "<<it.first<<" at "<<mapfd[*(it.second.second.begin())].first<<" with MD5 0 at depth 1\n";
+                            cout<<"Found "<<it.first<<" at "<<*(it.second.second.begin())<<" with MD5 0 at depth 1\n";
                         }
                         else{
                             cout<<"Found "<<it.first<<" at 0 with MD5 0 at depth 0\n";
