@@ -1,0 +1,21 @@
+another.txt
+bar.pdf
+DDL_olympics_new.sql
+f1.txt
+file.cpp
+foo.png
+go.sh
+lab4db.ddl
+o2
+op.txt
+opda.txt
+oppk.txt
+queries
+random.py
+ra_final
+run.sh
+temp.c
+Connected to 1 with unique-ID 6931 on port 5000
+Connected to 3 with unique-ID 4080 on port 7000
+overwriting reciever file pointer
+overwriting reciever file pointer

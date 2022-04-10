@@ -1,0 +1,15 @@
+another.txt
+file.cpp
+go.sh
+lab4db.ddl
+op.txt
+opda.txt
+q1.cpp
+ra.txt
+ra_final
+run.sh
+temp.c
+temp.cpp
+Connected to 1 with unique-ID 6931 on port 5000
+Connected to 3 with unique-ID 4080 on port 7000
+Connected to 5 with unique-ID 1650 on port 9000

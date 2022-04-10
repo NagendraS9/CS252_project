@@ -1,0 +1,14 @@
+another.txt
+f1.txt
+file.cpp
+go.sh
+lab4db.ddl
+o2
+op.txt
+ra.txt
+run.sh
+temp.c
+Connected to 1 with unique-ID 6931 on port 5000
+Connected to 2 with unique-ID 9461 on port 6000
+Connected to 4 with unique-ID 8158 on port 8000
+Connected to 5 with unique-ID 1650 on port 9000

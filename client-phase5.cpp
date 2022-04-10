@@ -17,7 +17,7 @@ using namespace std;
 
 #define LOOPBACK "127.0.0.1"
 #define SIZE 1024
-#define SIZE 1024
+// #define SIZE 1024
 string exec(char *cmd)
 {
     array<char, 256> buffer;
