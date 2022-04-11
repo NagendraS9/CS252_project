@@ -260,11 +260,15 @@ int main(int argc, char *argv[])
             notSentNNConfirmation = false;
         }
 
-        if (totalConfirmations == no_neighbors && totalNNConfirmations == no_neighbors && haveAllInfo){
+        if (totalConfirmations == no_neighbors && totalNNConfirmations == no_neighbors && conDetails){
             // cout<<"HI\n";
             // for (auto it : mapfd){
             //     close(it.second.second);
             // }
+            for (int j=0;j<fd_count;j++){
+                close(pfds[j].fd);
+            }
+            free(pfds);
             exit(1);
         }
 
@@ -636,6 +640,7 @@ int main(int argc, char *argv[])
                         // Reply we receive from the neighbor
                         else if (msg_type == 2){
                             // This neighbor has replied
+                            cout<<buf<<"\n";
                             neighborsAnswered[nid].first = true;
                             for (int j=2;j<seglist.size();j++){
                                 // Unique id of client where it found the file

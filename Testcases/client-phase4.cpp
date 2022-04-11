@@ -401,18 +401,7 @@ int main(int argc, char *argv[])
                         if (!found){
                             ffound[file_names[i]].first = false;
                             // file_depths[file_names[i]] = 0;
-                            string msg = "1 ";
-                            msg += to_string(id);
-                            for (int j = 0;j<no_files;j++){
-                                msg += " ";
-                                msg += file_names[j];
-                            }
-                            for (auto it : mapfd){
-                                // cout<<"Asking "<<it.first<<"\n";
-                                if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
-                                    perror("send");
-                                }
-                            }
+                            
                             // Set askNeighbor to true
                             askNeighbor = true;
                         }
@@ -422,6 +411,21 @@ int main(int argc, char *argv[])
                         }
                     }
 
+                    if (askNeighbor){
+                        string msg = "1 ";
+                        msg += to_string(id);
+                        for (int j = 0;j<no_files;j++){
+                            msg += " ";
+                            msg += file_names[j];
+                        }
+                        cout<<"Send msg: "<<msg<<"\n";
+                        for (auto it : mapfd){
+                            // cout<<"Asking "<<it.first<<"\n";
+                            if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
+                                perror("send");
+                            }
+                        }
+                    }
                     // If we found all the files at our neighbors
                     if (!askNeighbor){
                         for (auto it : ffound){
@@ -588,6 +592,7 @@ int main(int argc, char *argv[])
                             // Files that are being searched
                             vector<string> files_to_search;
                             // If we've received files names from our neighbors
+                            cout<<"Msg 1: "<<buf<<"\n";
                             if (haveNeighborFiles) {
                                 // cout<<"I've files\n";
                                 
@@ -636,6 +641,8 @@ int main(int argc, char *argv[])
                         // Reply we receive from the neighbor
                         else if (msg_type == 2){
                             // This neighbor has replied
+                            cout<<"Msg 2: "<<buf<<"\n";
+
                             neighborsAnswered[nid].first = true;
                             for (int j=2;j<seglist.size();j++){
                                 // Unique id of client where it found the file
