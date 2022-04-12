@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
     bool output_printed = false;
     bool connected_output_printed = false;
     bool ask_for_files = false;
-    int timeout = 20;
+    int timeout = 10;
     // List all the files in the given directory
     // listFiles(argv[2]);
     int listener; // Listening socket descriptor
@@ -711,7 +711,7 @@ int main(int argc, char *argv[])
                                 cout << "overwriting reciever file pointer" << endl;
                             }
                         }
-                        cout << it.first<<" recieve file from port" << Port_to_recieve << endl;
+                        // cout << it.first<<" recieve file from port" << Port_to_recieve << endl;
                     }
                     // cout<<"474:size "<<ffound_copy.size()<<endl;
                     ffound_copy.erase(it.first);

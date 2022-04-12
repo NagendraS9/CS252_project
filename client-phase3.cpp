@@ -311,18 +311,18 @@ int main(int argc, char *argv[])
     // Main loop
     for (;;)
     {
-        if (totalConfirmations == no_neighbors && notSentNNConfirmation){
-            string msg = "4 ";
-            msg += to_string(id);
-            for (auto it : mapfd){
-                if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
-                    perror("NNConfirm send");
-                }
-            }
-            notSentNNConfirmation = false;
-        }
+        // if (totalConfirmations == no_neighbors && notSentNNConfirmation){
+        //     string msg = "4 ";
+        //     msg += to_string(id);
+        //     for (auto it : mapfd){
+        //         if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
+        //             perror("NNConfirm send");
+        //         }
+        //     }
+        //     notSentNNConfirmation = false;
+        // }
 
-        if (totalConfirmations == no_neighbors && totalNNConfirmations == no_neighbors && conDetails){
+        if (totalConfirmations == no_neighbors && output_printed){
             // cout<<"HI\n";
             // for (auto it : mapfd){
             //     close(it.second.second);
@@ -556,16 +556,15 @@ int main(int argc, char *argv[])
                 {
                     cout << "Found " << it.first << " at " << *(it.second.second.begin()) << " with MD5 0 at depth 0\n";
                 }
-
-                string msg = "3 ";
-                msg += to_string(id);
-                for (auto it : mapfd){
-                    if (send(mapfd[it.first].second, msg.c_str(), msg.length(), 0) == -1){
-                        perror("Line 422");
-                    }
-                }
-
             }
+            string msg = "3 ";
+            msg += to_string(id);
+            for (auto it : mapfd){
+                if (send(mapfd[it.first].second, msg.c_str(), msg.length(), 0) == -1){
+                    perror("Line 422");
+                }
+            }
+
             output_printed = true;
         }
 
@@ -712,9 +711,9 @@ int main(int argc, char *argv[])
                             else if (seglist[0] == "3"){
                                 totalConfirmations ++;
                             }
-                            else if (seglist[0] == "4"){
-                                totalNNConfirmations ++;
-                            }
+                            // else if (seglist[0] == "4"){
+                            //     totalNNConfirmations ++;
+                            // }
                         }
                     }
                 }
