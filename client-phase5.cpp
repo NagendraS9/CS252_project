@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
     }
 
     map<int, pair<FILE *, string>> recieving; // from sock_desc to be recieved its File pointer and filename
-    map<string,bool> recieved;//bool recieved?int unique id?
+    map<string, bool> recieved;               // bool recieved?int unique id?
     for (int i = 0; i < file_names.size(); i++)
     {
         recieved[file_names[i]] = false;
@@ -329,18 +329,41 @@ int main(int argc, char *argv[])
 
     // The neighbors to which our reply is pending to their search request of searching our neighbors
     vector<pair<int, vector<string>>> toSend;
-
+    int totalConfirmations = 0, totalNNConfirmations = 0, totalNN = 0;
+    bool notSentNNConfirmation = true;
+    bool printedConnectionInfo = false;
+    bool haveAllInfo = false;
     // Main loop
     for (;;)
     {
-        if (output_printed)
+        if (totalConfirmations == no_neighbors && notSentNNConfirmation)
         {
-            timeout--;
-            if (timeout == 0)
+            string msg = "4 ";
+            msg += to_string(id);
+            for (auto it : mapfd)
             {
-                exit(0);
+                if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1)
+                {
+                    perror("NNConfirm send");
+                }
             }
+            notSentNNConfirmation = false;
         }
+
+        if (totalConfirmations == no_neighbors && totalNNConfirmations == no_neighbors && output_printed)
+        {
+            // cout<<"HI\n";
+            // for (auto it : mapfd){
+            //     close(it.second.second);
+            // }
+            for (int j = 0; j < fd_count; j++)
+            {
+                close(pfds[j].fd);
+            }
+            free(pfds);
+            exit(1);
+        }
+
         int poll_count = poll(pfds, fd_count, 2500);
 
         if (poll_count == -1)
@@ -532,22 +555,26 @@ int main(int argc, char *argv[])
                             file_depths[file_names[i]] = 1;
                         }
                     }
-                    if (askNeighbor){
+                    if (askNeighbor)
+                    {
                         string msg = "1 ";
                         msg += to_string(id);
-                        for (int j = 0;j<no_files;j++){
+                        for (int j = 0; j < no_files; j++)
+                        {
                             msg += " ";
                             msg += file_names[j];
                         }
                         // cout<<"Send msg: "<<msg<<"\n";
-                        for (auto it : mapfd){
+                        for (auto it : mapfd)
+                        {
                             // cout<<"Asking "<<it.first<<"\n";
-                            if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
+                            if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1)
+                            {
                                 perror("send");
                             }
                         }
                     }
-                    ffound_copy=ffound;
+                    ffound_copy = ffound;
                     // If we found all the files at our neighbors
                     if (!askNeighbor)
                     {
@@ -578,7 +605,7 @@ int main(int argc, char *argv[])
                         // cout<<567<<endl;
                     }
                     // cout<<"581"<<endl;
-                    ffound_copy=ffound;
+                    ffound_copy = ffound;
                     ask_for_files = true;
                     conDetails = true;
                 }
@@ -722,14 +749,15 @@ int main(int argc, char *argv[])
                     recieved[it.first] = true;
                     // cout << "Found " << it.first << " at 0 with MD5 0 at depth 0\n";
                 }
-                
             }
-            //check if you still need to ask for files
-            ask_for_files=false;
-            for(auto it : ffound_copy){
-                if(it.second.first){
+            // check if you still need to ask for files
+            ask_for_files = false;
+            for (auto it : ffound_copy)
+            {
+                if (it.second.first)
+                {
                     // cout<<"733:file still needed "<<it.first<<endl;
-                    ask_for_files=true;
+                    ask_for_files = true;
                     break;
                 }
             }
@@ -762,6 +790,15 @@ int main(int argc, char *argv[])
                     else
                     {
                         cout << "Found " << it.first << " at 0 with MD5 0 at depth 0\n";
+                    }
+                }
+                string msg = "3 ";
+                msg += to_string(id);
+                for (auto it : mapfd)
+                {
+                    if (send(mapfd[it.first].second, msg.c_str(), msg.length(), 0) == -1)
+                    {
+                        perror("Line 422");
                     }
                 }
                 output_printed = true;
@@ -839,7 +876,7 @@ int main(int argc, char *argv[])
                         del_from_pfds(pfds, i, &fd_count);
                     }
                     else
-                    {   
+                    {
                         if (recieving[pfds[i].fd].first != NULL)
                         {
                             if (nbytes < SIZE)
@@ -888,6 +925,7 @@ int main(int argc, char *argv[])
                                 FILE *fp = fopen(loc.c_str(), "r");
                                 if (fp == NULL)
                                 {
+                                    cout<<loc<<endl;
                                     perror("[-]Error in reading file.");
                                     exit(1);
                                 }
@@ -1003,8 +1041,16 @@ int main(int argc, char *argv[])
                                 {
                                     // Unique id of client where it found the file
                                     neighborsAnswered[nid].second[j - 2].first = stoi(seglist[j].substr(0, seglist[j].find(';')));
-                                    neighborsAnswered[nid].second[j - 2].second = stoi(seglist[j].substr(seglist[j].find(';') + 1, seglist[j].size()-seglist[j].find(';') - 1));
+                                    neighborsAnswered[nid].second[j - 2].second = stoi(seglist[j].substr(seglist[j].find(';') + 1, seglist[j].size() - seglist[j].find(';') - 1));
                                 }
+                            }
+                            else if (msg_type == 3)
+                            {
+                                totalConfirmations++;
+                            }
+                            else if (msg_type == 4)
+                            {
+                                totalNNConfirmations++;
                             }
                         }
                     }
