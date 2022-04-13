@@ -1,6 +1,0 @@
-ddlolympics.sql
-f1.txt
-lab4db.ddl
-run.sh
-temp.c
-Connected to 2 with unique-ID 5790 on port 6000

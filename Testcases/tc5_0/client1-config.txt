@@ -1,8 +1,0 @@
-1 5000 3855
-3
-2 6000 3 7000 4 8000 
-4
-another.txt
-ra.txt
-rafinal
-go.sh

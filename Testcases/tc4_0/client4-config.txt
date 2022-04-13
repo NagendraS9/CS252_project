@@ -1,6 +1,0 @@
-4 8000 9230
-0
-
-2
-queries
-lab4db.ddl

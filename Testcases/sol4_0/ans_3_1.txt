@@ -1,8 +1,0 @@
-bar.pdf
-f1.txt
-go.sh
-op.txt
-opda.txt
-oppk.txt
-q1.cpp
-temp.c

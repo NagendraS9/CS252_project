@@ -1,8 +1,0 @@
-ddlolympics.sql
-o2
-op.txt
-opda.txt
-random.py
-Connected to 2 with unique-ID 2721 on port 6000
-Connected to 3 with unique-ID 1939 on port 7000
-Connected to 4 with unique-ID 5294 on port 8000

@@ -1,7 +1,0 @@
-1 5000 5328
-1
-2 6000 
-3
-rafinal
-ra.txt
-opda.txt
