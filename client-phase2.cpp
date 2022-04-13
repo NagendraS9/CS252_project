@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
     socklen_t addrlen;
     int total_msg_sent=0;
     bool allSend=false;
-    char buf[1024];    // Buffer for client data
+    char buf[256];    // Buffer for client data
 
     char remoteIP[INET6_ADDRSTRLEN];
 
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
     // conDetails = true if we've printed the connection details 
     // allConnected = true if all the connections have been made
     bool allConnected = false, conDetails = false;
-
+    int confirmations = 0;
     // Main loop
     for(;;) {
         int poll_count = poll(pfds, fd_count, 2500);
@@ -221,6 +221,10 @@ int main(int argc, char *argv[])
         if (poll_count == -1) {
             perror("poll");
             // cout<<"POLL\n";
+            exit(1);
+        }
+
+        if (confirmations == no_neighbors && conDetails && allConnected){
             exit(1);
         }
         if (!allConnected){
@@ -313,8 +317,11 @@ int main(int argc, char *argv[])
                         }
                     }
                     conDetails = true;
-                    if(allConnected && allSend){
-                        exit(1);
+                    for (auto it : mapfd){
+                        string msg = "1";
+                        if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
+                            perror("Error sending confirmation");
+                        }
                     }
                 }
             }
@@ -337,7 +344,7 @@ int main(int argc, char *argv[])
                         perror("accept");
                     } else {
                         add_to_pfds(&pfds, newfd, &fd_count, &fd_size);
-                        string msg;
+                        string msg = "0 ";
                         msg += to_string(id);
                         msg += " ";
                         msg += to_string(unique_id);
@@ -349,11 +356,7 @@ int main(int argc, char *argv[])
                         if (send(newfd, m, strlen(m), 0) == -1){
                             perror("send");
                         }
-                        total_msg_sent+=1;
-                        if(total_msg_sent==no_neighbors){
-                            allSend=true;
-                            if(allConnected && conDetails){exit(1);}
-                        }
+
                     }
                 } 
                 else {
@@ -386,23 +389,29 @@ int main(int argc, char *argv[])
                             seglist.push_back(segment);
                         }
                         int nid, nunique, msg_type;
-                        nid = stoi(seglist[0]);
-                        nunique = stoi(seglist[1]);
-                        for (int i=0;i<neighbors.size();i++){
-                            // Push unique id of the neighbor
-                            if (neighbors[i][0] == nid){
-                                neighbors[i].push_back(nunique);
-                                mapfd[nid].first = nunique;
-                                receivedAns[nid].first = true; //set I have recieved response from this id
-                            }
-                        }
-                        //check the recieved file names are demanded by client?if yes add them
-                        for(int i=2;i<seglist.size();i++){
-                            for (int j=0;j<no_files;j++){
-                                if(file_names[j]==seglist[i]){
-                                    receivedAns[nid].second[j] =true;
+                        msg_type = stoi(seglist[0]);
+                        if (msg_type == 0){
+                            nid = stoi(seglist[1]);
+                            nunique = stoi(seglist[2]);
+                            for (int i=0;i<neighbors.size();i++){
+                                // Push unique id of the neighbor
+                                if (neighbors[i][0] == nid){
+                                    neighbors[i].push_back(nunique);
+                                    mapfd[nid].first = nunique;
+                                    receivedAns[nid].first = true; //set I have recieved response from this id
                                 }
                             }
+                            //check the recieved file names are demanded by client?if yes add them
+                            for(int i=3;i<seglist.size();i++){
+                                for (int j=0;j<no_files;j++){
+                                    if(file_names[j]==seglist[i]){
+                                        receivedAns[nid].second[j] =true;
+                                    }
+                                }
+                            }
+                        }
+                        else if (msg_type == 1){
+                            confirmations ++;
                         }
                     }
                 } 
@@ -413,36 +422,3 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-
-
-
-
-
-
-// string exec(const char* cmd) {
-//     array<char, 128> buffer;
-//     string result;
-//     unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-//     if (!pipe) {
-//         throw runtime_error("popen() failed!");
-//     }
-//     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-//         result += buffer.data();
-//     }
-//     return result;
-// }
-
-
-// //phase-3 addition
-// void send_file(FILE *fp, int sockfd){
-//   int n;
-//   char data[SIZE] = {0};
- 
-//   while(fgets(data, SIZE, fp) != NULL) {
-//     if (send(sockfd, data, sizeof(data), 0) == -1) {
-//       perror("[-]Error in sending file.");
-//       exit(1);
-//     }
-//     bzero(data, SIZE);
-//   }
-// }

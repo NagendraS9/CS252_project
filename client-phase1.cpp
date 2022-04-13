@@ -58,7 +58,7 @@ void listFiles(const char* dirname){
     /* print all the files and directories within directory */
     while ((ent = readdir (dir)) != NULL) {
         string d_name = ent->d_name;
-        if (d_name != "." && d_name != "..")  
+        if (d_name != "." && d_name != ".." && d_name != "Downloaded") 
             printf ("%s\n", ent->d_name);
     }
     closedir (dir);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
     struct sockaddr_storage remoteaddr; // Client address
     socklen_t addrlen;
 
-    char buf[256];    // Buffer for client data
+    char buf[1024];    // Buffer for client data
 
     char remoteIP[INET6_ADDRSTRLEN];
 
@@ -202,7 +202,8 @@ int main(int argc, char *argv[])
     // conDetails = true if we've printed the connection details 
     // allConnected = true if all the connections have been made
     bool allConnected = false, conDetails = false;
-    // cout<<neighbors.size()<<"\n";
+    int confirmations = 0;
+    map<int, int> mapfd;
 
     // Main loop
     for(;;) {
@@ -237,6 +238,7 @@ int main(int argc, char *argv[])
 
                     if (connect(newfd, res->ai_addr, res->ai_addrlen) != -1){
                         add_to_pfds(&pfds, newfd, &fd_count, &fd_size);
+                        mapfd[neighbors[i][0]] = newfd;
                         connected[i] = true;
                     } else{
                         allSuccess = false;
@@ -266,12 +268,20 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
+                for (auto it : mapfd ){
+                    string msg = "1";
+                    
+                    if (send(it.second, msg.c_str(), msg.length(), 0 ) == -1){
+                        perror("Error sending confirmation");
+                    }
+                }
                 conDetails = true;
+                
             }
         }
-        // if(conDetails && allConnected){
-        //     exit(0);
-        // }
+        if(conDetails && allConnected && confirmations == no_neighbors){
+            exit(1);
+        }
         // Run through the existing connections looking for data to read
         for(int i = 0; i < fd_count; i++) {
 
@@ -343,6 +353,9 @@ int main(int argc, char *argv[])
                                     neighbors[i].push_back(nunique);
                                 }
                             }
+                        }
+                        else if (msg_type == 1){
+                            confirmations ++;
                         }
                     }
                 } // END handle data from client
