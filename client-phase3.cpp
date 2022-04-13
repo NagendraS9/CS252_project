@@ -266,7 +266,6 @@ int main(int argc, char *argv[])
     }
     bool output_printed = false;
     bool ask_for_files=false;
-    int timeout = 16;
 
     int listener;                       // Listening socket descriptor
     int newfd;                          // Newly accept()ed socket descriptor
@@ -311,22 +310,7 @@ int main(int argc, char *argv[])
     // Main loop
     for (;;)
     {
-        // if (totalConfirmations == no_neighbors && notSentNNConfirmation){
-        //     string msg = "4 ";
-        //     msg += to_string(id);
-        //     for (auto it : mapfd){
-        //         if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
-        //             perror("NNConfirm send");
-        //         }
-        //     }
-        //     notSentNNConfirmation = false;
-        // }
-
         if (totalConfirmations == no_neighbors && output_printed){
-            // cout<<"HI\n";
-            // for (auto it : mapfd){
-            //     close(it.second.second);
-            // }
             for (int j=0;j<fd_count;j++){
                 close(pfds[j].fd);
             }
@@ -711,9 +695,6 @@ int main(int argc, char *argv[])
                             else if (seglist[0] == "3"){
                                 totalConfirmations ++;
                             }
-                            // else if (seglist[0] == "4"){
-                            //     totalNNConfirmations ++;
-                            // }
                         }
                     }
                 }
