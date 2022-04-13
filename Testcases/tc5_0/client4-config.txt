@@ -1,7 +1,9 @@
-4 8000 8158
+4 8000 5294
 2
-1 5000 3 7000 
-3
-ra.txt
-q1.cpp
-temp.cpp
+1 5000 5 9000 
+5
+foo.png
+lab4db.ddl
+go.sh
+queries
+oppk.txt

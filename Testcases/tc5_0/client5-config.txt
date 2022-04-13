@@ -1,7 +1,7 @@
-5 9000 1650
+5 9000 1272
 2
-2 6000 3 7000 
+3 7000 4 8000 
 3
-queries
-bar.pdf
-ra_final
+random.py
+op.txt
+f1.txt

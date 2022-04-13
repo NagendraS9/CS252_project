@@ -227,7 +227,6 @@ int main(int argc, char *argv[])
         if (confirmations == no_neighbors && conDetails && allConnected){
             exit(1);
         }
-
         if (!allConnected){
             bool allSuccess = true;
             for (int i=0;i<neighbors.size();i++){

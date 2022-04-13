@@ -201,7 +201,7 @@ void send_file(FILE *fp, int sockfd)
     }
 
     fclose(fp);
-    //   cout<<"everything send"<<endl;
+    // cout << "everything send" << endl;
 }
 void create_dir(const char *dir_loc)
 {
@@ -250,21 +250,23 @@ int main(int argc, char *argv[])
 
     // Mapping ids to unique id and socket descriptor
     map<int, pair<int, int>> mapfd;
-
+    map<string, pair<bool, set<int>>> ffound;
     map<string, pair<FILE *, int>> sending; // string file to be send its File pointer and sockfd
     for (int i = 0; i < my_files.size(); i++)
     {
         sending[my_files[i]] = {NULL, -1};
     }
 
-    map<int, pair<FILE *, string>> recieving; // string file to be recieved its File pointer and filename
+    map<int, vector<pair<FILE *, string>>> recieving; // socket fd to be recieved its File pointer and filename
+    bool file_request_sended=false;
     map<string, bool> recieved;
     for (int i = 0; i < file_names.size(); i++)
     {
         recieved[file_names[i]] = false;
     }
     bool output_printed = false;
-    int timeout=10;
+    bool ask_for_files=false;
+    int timeout = 16;
 
     int listener;                       // Listening socket descriptor
     int newfd;                          // Newly accept()ed socket descriptor
@@ -301,12 +303,24 @@ int main(int argc, char *argv[])
     // conDetails = true if we've printed the connection details
     // allConnected = true if all the connections have been made
     bool allConnected = false, conDetails = false;
+    int totalConfirmations = 0, totalNNConfirmations = 0, totalNN = 0;
+    bool notSentNNConfirmation = true;
+    bool printedConnectionInfo = false;
+    bool haveAllInfo = false;
 
     // Main loop
     for (;;)
     {
-        if(output_printed){timeout--; sleep(1);}
-        if(timeout==0){exit(1);}
+        // if (totalConfirmations == no_neighbors && notSentNNConfirmation){
+        //     string msg = "4 ";
+        //     msg += to_string(id);
+        //     for (auto it : mapfd){
+        //         if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
+        //             perror("NNConfirm send");
+        //         }
+        //     }
+        //     notSentNNConfirmation = false;
+        // }
         int poll_count = poll(pfds, fd_count, 2500);
 
         if (poll_count == -1)
@@ -315,6 +329,19 @@ int main(int argc, char *argv[])
             // cout<<"POLL\n";
             exit(1);
         }
+
+        if (totalConfirmations == no_neighbors && output_printed){
+            // cout<<"HI\n";
+            // for (auto it : mapfd){
+            //     close(it.second.second);
+            // }
+            for (int j=0;j<fd_count;j++){
+                close(pfds[j].fd);
+            }
+            free(pfds);
+            exit(1);
+        }
+
         if (!allConnected)
         {
             bool allSuccess = true;
@@ -344,7 +371,6 @@ int main(int argc, char *argv[])
                     if (connect(newfd, res->ai_addr, res->ai_addrlen) != -1)
                     {
                         add_to_pfds(&pfds, newfd, &fd_count, &fd_size);
-                        recieving[newfd] = {NULL, "p"};
                         connected[i] = true;
                         mapfd[neighbors[i][0]] = {0, newfd};
                     }
@@ -400,8 +426,8 @@ int main(int argc, char *argv[])
 
                 if (receivedAll)
                 {
-                    map<string, pair<bool, set<int>>> ffound; // file found set is nid it is found
-                    // cout<<"YES\n";
+                    ask_for_files = true;
+                    //set the files found
                     for (int i = 0; i < no_files; i++)
                     {
                         bool found = false;
@@ -411,7 +437,7 @@ int main(int argc, char *argv[])
                             {
                                 found = true;
                                 ffound[file_names[i]].first = true;
-                                ffound[file_names[i]].second.insert(it.first);
+                                ffound[file_names[i]].second.insert(mapfd[it.first].first);
                             }
                         }
                         if (!found)
@@ -419,53 +445,69 @@ int main(int argc, char *argv[])
                             ffound[file_names[i]].first = false;
                         }
                     }
-                    for (auto it : ffound)
-                    {
-                        if (it.second.first)
-                        {
-                            // set datatype iteration is in sorted manner so just take first to get min
-                            //  cout<<"Found "<<it.first<<" at "<<mapfd[*(it.second.second.begin())].first<<" with MD5 0 at depth 1\n";
-                            //  ask for the file by msg "-1 required_file_name"
-                            string msg = "-1 ";
-                            msg += it.first;
-                            char *m = &msg[0];
-                            if (send(mapfd[*(it.second.second.begin())].second, m, strlen(m), 0) == -1)
-                            {
-                                perror("send");
-                            }
-                            else
-                            {
-                                // set recieving file
-                                string loc = argv[2];
-                                loc += "Downloaded/";
-                                create_dir(loc.c_str());
-                                loc += it.first;
-                                FILE *fp = fopen(loc.c_str(), "w"); // create  file pointer
-                                if (fp == NULL)
-                                {
-                                    cout << "error creating file at " << loc << endl;
-                                }
-                                // cout<<"setting fp"<<endl;
-                                if (recieving[mapfd[*(it.second.second.begin())].second].first == NULL)
-                                {
-                                    recieving[mapfd[*(it.second.second.begin())].second] = {fp, it.first};
-                                }
-                                else
-                                {
-                                    cout << "overwriting reciever file pointer" << endl;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            //  tell I don't need file by msg "-1 #"
-                            recieved[it.first] = true; // if file not found means not needed so recieved
-                        }
-                    }
                     conDetails = true;
                     // if(allConnected && allSend){
                     //     exit(1);
                     // }
+                }
+            }
+        }
+        // ask_for_files if u got all info
+        if (ask_for_files & !file_request_sended)
+        {
+            for (auto it : ffound)
+            {
+                if (it.second.first)
+                {
+                    // set datatype iteration is in sorted manner so just take first to get min
+                    //  cout<<"Found "<<it.first<<" at "<<mapfd[*(it.second.second.begin())].first<<" with MD5 0 at depth 1\n";
+                    //  ask for the file by msg "-1 required_file_name"
+                    string msg = "-1 ";
+                    msg += it.first;
+                    // set recieving file
+                    string loc = argv[2];
+                    loc += "Downloaded/";
+                    create_dir(loc.c_str());
+                    loc += it.first;
+                    FILE *fp = fopen(loc.c_str(), "w"); // create  file pointer
+                    if (fp == NULL)
+                    {
+                        cout << "error creating file at " << loc << endl;
+                    }
+                    int nid;
+                    // get_id_from_uniqueid_ofneigh(*(it.second.second.begin()))
+                    for (int i = 0; i < no_neighbors; i++)
+                    {
+                        if (neighbors[i][2] == *(it.second.second.begin()))
+                        {
+                            nid = neighbors[i][0];
+                        }
+                    }
+                    if (send(mapfd[nid].second, &msg[0], msg.size(), 0) == -1)
+                    {
+                        perror("send");
+                    }
+                    else{
+                        file_request_sended=true;
+                        // cout<<"file req for "<<it.first<<" from "<<mapfd[nid].first<<endl;
+                        recieving[mapfd[nid].second].push_back({fp, it.first});
+                    }
+                    // cout << mapfd[nid].second << " got one file " << it.first << endl;
+                    // cout<<"474:size "<<ffound.size()<<endl;
+                    ffound.erase(it.first);
+                    break;
+                }
+                else
+                {
+                    //  tell I don't need file by msg "-1 #"
+                    recieved[it.first] = true; // if file not found means not needed so recieved
+                }
+            }
+            //check if yoy=u still need to ask for files
+            ask_for_files=false;
+            for(auto it : ffound){
+                if(it.second.first){
+                    ask_for_files=true;
                 }
             }
         }
@@ -480,6 +522,7 @@ int main(int argc, char *argv[])
                 break;
             }
         }
+
         if (allRecieved & !output_printed)
         {
             map<string, pair<bool, set<int>>> ffound; // file found set is nid it is found
@@ -492,7 +535,7 @@ int main(int argc, char *argv[])
                     {
                         found = true;
                         ffound[file_names[i]].first = true;
-                        ffound[file_names[i]].second.insert(it.first);
+                        ffound[file_names[i]].second.insert(mapfd[it.first].first);
                     }
                 }
                 if (!found)
@@ -507,13 +550,21 @@ int main(int argc, char *argv[])
                     string file_loc = argv[2];
                     file_loc += "Downloaded/";
                     file_loc += it.first;
-                    cout << "Found " << it.first << " at " << mapfd[*(it.second.second.begin())].first << " with MD5 " << find_md5(file_loc) << " at depth 1\n";
+                    cout << "Found " << it.first << " at " << *(it.second.second.begin())<< " with MD5 " << find_md5(file_loc) << " at depth 1\n";
                 }
                 else
                 {
-                    cout << "Found " << it.first << " at " << mapfd[*(it.second.second.begin())].first << " with MD5 0 at depth 1\n";
+                    cout << "Found " << it.first << " at " << *(it.second.second.begin()) << " with MD5 0 at depth 0\n";
                 }
             }
+            string msg = "3 ";
+            msg += to_string(id);
+            for (auto it : mapfd){
+                if (send(mapfd[it.first].second, msg.c_str(), msg.length(), 0) == -1){
+                    perror("Line 564");
+                }
+            }
+
             output_printed = true;
         }
 
@@ -528,7 +579,6 @@ int main(int argc, char *argv[])
                     // If listener is ready to read, handle new connection
                     addrlen = sizeof remoteaddr;
                     newfd = accept(listener, (struct sockaddr *)&remoteaddr, &addrlen);
-                    recieving[newfd] = {NULL, "p"};
                     if (newfd == -1)
                     {
                         perror("accept");
@@ -566,7 +616,7 @@ int main(int argc, char *argv[])
                         // Got error or connection closed by client
                         if (nbytes == 0)
                         {
-                            // Connection closed
+                            //Connection closed
                             // printf("pollserver: socket %d hung up\n", sender_fd);
                         }
                         else
@@ -579,20 +629,23 @@ int main(int argc, char *argv[])
                     }
                     else
                     {
-                        if (recieving[pfds[i].fd].first != NULL)
+                        if (recieving[pfds[i].fd].size() > 0 && recieving[pfds[i].fd][0].first != NULL)
                         {
                             if (nbytes < SIZE)
                             {
-                                // cout<<"recieved"<<nbytes<<endl;
-                                fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd].first);
+                                // cout << "recieved " << recieving[pfds[i].fd][0].second << " " << nbytes << endl;
+                                fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd][0].first);
                                 bzero(buf, 1024);
-                                fclose(recieving[pfds[i].fd].first);
-                                recieving[pfds[i].fd].first = NULL;
-                                recieved[recieving[pfds[i].fd].second] = true;
+                                fclose(recieving[pfds[i].fd][0].first);
+                                recieved[recieving[pfds[i].fd][0].second] = true;
+                                recieving[pfds[i].fd].erase(recieving[pfds[i].fd].begin());
+                                
+                                //ready to send more request for files
+                                file_request_sended=false;
                             }
                             else
                             {
-                                fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd].first);
+                                fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd][0].first);
                                 // fprintf(recieving[pfds[i].fd].first, "%s", buffer);
                                 bzero(buf, 1024);
                             }
@@ -642,16 +695,25 @@ int main(int argc, char *argv[])
                                 // cout<<"sending"<<endl;
                                 string loc = argv[2];
                                 loc += seglist[1];
-                                // cout<<loc<<"\n";
                                 FILE *fp = fopen(loc.c_str(), "r");
                                 if (fp == NULL)
                                 {
+                                    cout << buf << endl;
+                                    cout << loc << endl;
                                     perror("[-]Error in reading file.");
                                     exit(1);
                                 }
+                                // cout<<buf<<endl;
+                                // cout << "sending " << seglist[1] << endl;
                                 send_file(fp, pfds[i].fd);
                                 // cout<<"send";
                             }
+                            else if (seglist[0] == "3"){
+                                totalConfirmations ++;
+                            }
+                            // else if (seglist[0] == "4"){
+                            //     totalNNConfirmations ++;
+                            // }
                         }
                     }
                 }
@@ -662,17 +724,4 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-// string exec(const char* cmd) {
-//     array<char, 128> buffer;
-//     string result;
-//     unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-//     if (!pipe) {
-//         throw runtime_error("popen() failed!");
-//     }
-//     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-//         result += buffer.data();
-//     }
-//     return result;
-// }
-
-// 416,
+//./client-phase4 ./tc4_0/client4-config.txt ./tc4_0/files/client4/

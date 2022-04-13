@@ -1,7 +1,8 @@
-1 5000 6931
+1 5000 3855
 3
 2 6000 3 7000 4 8000 
-3
-oppk.txt
-queries
+4
 another.txt
+ra.txt
+rafinal
+go.sh

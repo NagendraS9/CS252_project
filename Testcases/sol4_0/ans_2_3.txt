@@ -1,21 +1,19 @@
 another.txt
 bar.pdf
-DDL_olympics_new.sql
 f1.txt
+file.cpp
 foo.png
 go.sh
 lab4db.ddl
-o2
 op.txt
 opda.txt
 oppk.txt
 q1.cpp
 ra.txt
-random.py
-ra_final
+rafinal
 run.sh
 temp.c
-temp.cpp
-Connected to 4 with unique-ID 5101 on port 8000
-Found file.cpp at 5101 with MD5 d1f7b08b8b5d70d3bd7cc7130edf052d at depth 1
-Found queries at 5101 with MD5 0c902f4a42de8386868257caf48241ec at depth 1
+temp2.cpp
+Connected to 1 with unique-ID 5328 on port 5000
+Found ddlolympics.sql at 5328 with MD5 b068bb9e417e97c12a8dc49ec3aac08a at depth 1
+Found queries at 0 with MD5 0 at depth 0

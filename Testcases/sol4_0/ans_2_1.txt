@@ -1,19 +1,17 @@
 another.txt
 bar.pdf
-DDL_olympics_new.sql
 f1.txt
+file.cpp
 foo.png
 go.sh
 lab4db.ddl
-o2
 op.txt
 opda.txt
 oppk.txt
 q1.cpp
 ra.txt
-random.py
-ra_final
+rafinal
 run.sh
 temp.c
-temp.cpp
-Connected to 4 with unique-ID 5101 on port 8000
+temp2.cpp
+Connected to 1 with unique-ID 5328 on port 5000

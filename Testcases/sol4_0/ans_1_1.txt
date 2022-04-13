@@ -1,13 +1,6 @@
-bar.pdf
-DDL_olympics_new.sql
+ddlolympics.sql
 f1.txt
-file.cpp
-go.sh
-oppk.txt
-q1.cpp
-random.py
+lab4db.ddl
 run.sh
 temp.c
-temp.cpp
-Connected to 3 with unique-ID 8570 on port 7000
-Connected to 4 with unique-ID 5101 on port 8000
+Connected to 2 with unique-ID 5790 on port 6000

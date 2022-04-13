@@ -403,7 +403,8 @@ int main(int argc, char *argv[])
                             // file_depths[file_names[i]] = 0;
                             
                             // Set askNeighbor to true
-                            askNeighbor = true;
+                            if (no_neighbors)
+                                askNeighbor = true;
                         }
                         else{
                             // Set depth to 1 because we found the file at our neighbor
@@ -418,7 +419,7 @@ int main(int argc, char *argv[])
                             msg += " ";
                             msg += file_names[j];
                         }
-                        cout<<"Send msg: "<<msg<<"\n";
+                        // cout<<"Send msg: "<<msg<<"\n";
                         for (auto it : mapfd){
                             // cout<<"Asking "<<it.first<<"\n";
                             if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
@@ -429,7 +430,7 @@ int main(int argc, char *argv[])
                     // If we found all the files at our neighbors
                     if (!askNeighbor){
                         for (auto it : ffound){
-                            cout<<"Found "<<it.first<<" at "<<*(ffound[it.first].second.begin())<<" with MD5 0 at depth 1\n";
+                            cout<<"Found "<<it.first<<" at "<<(it.second.first ? *(ffound[it.first].second.begin()) : 0)<<" with MD5 0 at depth "<<(it.second.first ? 1 : 0)<<"\n";
                         }
                         conDetails = true;
                         string msg = "3 ";
@@ -592,7 +593,7 @@ int main(int argc, char *argv[])
                             // Files that are being searched
                             vector<string> files_to_search;
                             // If we've received files names from our neighbors
-                            cout<<"Msg 1: "<<buf<<"\n";
+                            // cout<<"Msg 1: "<<buf<<"\n";
                             if (haveNeighborFiles) {
                                 // cout<<"I've files\n";
                                 
@@ -641,7 +642,7 @@ int main(int argc, char *argv[])
                         // Reply we receive from the neighbor
                         else if (msg_type == 2){
                             // This neighbor has replied
-                            cout<<"Msg 2: "<<buf<<"\n";
+                            // cout<<"Msg 2: "<<buf<<"\n";
 
                             neighborsAnswered[nid].first = true;
                             for (int j=2;j<seglist.size();j++){
