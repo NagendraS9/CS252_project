@@ -615,6 +615,13 @@ int main(int argc, char *argv[])
         // cout<<ask_for_files<<file_request_sended<<endl;
         if (ask_for_files && !file_request_sended)
         {
+            for (auto it : ffound)
+            {
+                if (!it.second.first)
+                {
+                    recieved[it.first] = true;
+                }
+            }
             // cout<<1<<endl;
             for (auto it : ffound_copy)
             {

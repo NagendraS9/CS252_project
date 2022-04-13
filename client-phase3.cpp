@@ -442,6 +442,13 @@ int main(int argc, char *argv[])
         {
             for (auto it : ffound)
             {
+                if (!it.second.first)
+                {
+                    recieved[it.first] = true;
+                }
+            }
+            for (auto it : ffound)
+            {
                 if (it.second.first)
                 {
                     // set datatype iteration is in sorted manner so just take first to get min
