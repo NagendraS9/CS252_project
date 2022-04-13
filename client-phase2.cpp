@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
     socklen_t addrlen;
     int total_msg_sent=0;
     bool allSend=false;
-    char buf[256];    // Buffer for client data
+    char buf[1024];    // Buffer for client data
 
     char remoteIP[INET6_ADDRSTRLEN];
 

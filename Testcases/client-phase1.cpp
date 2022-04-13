@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
     struct sockaddr_storage remoteaddr; // Client address
     socklen_t addrlen;
 
-    char buf[256];    // Buffer for client data
+    char buf[1024];    // Buffer for client data
 
     char remoteIP[INET6_ADDRSTRLEN];
 
