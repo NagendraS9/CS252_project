@@ -654,7 +654,6 @@ int main(int argc, char *argv[])
                                 fclose(recieving[pfds[i].fd][0].first);
                                 recieved[recieving[pfds[i].fd][0].second] = true;
                                 recieving[pfds[i].fd].erase(recieving[pfds[i].fd].begin());
-                                
                                 //ready to send more request for files
                                 file_request_sended=false;
                             }
@@ -662,6 +661,9 @@ int main(int argc, char *argv[])
                             {
                                 msg_size_recieved+=nbytes;
                                 // cout<<"recieving "<<recieving[pfds[i].fd][0].second<<" bytes got "<<msg_size_recieved<<" total size"<<file_size[recieving[pfds[i].fd][0].second]<<endl;
+                                fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd][0].first);
+                                // fprintf(recieving[pfds[i].fd].first, "%s", buffer);
+                                bzero(buf, 1024);
                                 if(msg_size_recieved>=file_size[recieving[pfds[i].fd][0].second]){
                                     msg_size_recieved=0;
                                     fclose(recieving[pfds[i].fd][0].first);
@@ -669,9 +671,6 @@ int main(int argc, char *argv[])
                                     recieving[pfds[i].fd].erase(recieving[pfds[i].fd].begin());
                                     file_request_sended=false;
                                 }
-                                fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd][0].first);
-                                // fprintf(recieving[pfds[i].fd].first, "%s", buffer);
-                                bzero(buf, 1024);
                             }
                         }
                         else
