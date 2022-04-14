@@ -1,19 +1,11 @@
 another.txt
-bar.pdf
 f1.txt
-file.cpp
-foo.png
-go.sh
-lab4db.ddl
-op.txt
-opda.txt
-oppk.txt
+o2
 q1.cpp
-ra.txt
-rafinal
-run.sh
 temp.c
 temp2.cpp
-Connected to 1 with unique-ID 5328 on port 5000
-Found ddlolympics.sql at 5328 with MD5 0 at depth 1
-Found queries at 0 with MD5 0 at depth 0
+Connected to 1 with unique-ID 3855 on port 5000
+Found ddlolympics.sql at 3855 with MD5 0 at depth 1
+Found foo.png at 0 with MD5 0 at depth 0
+Found op.txt at 3855 with MD5 0 at depth 1
+Found opda.txt at 3855 with MD5 0 at depth 1

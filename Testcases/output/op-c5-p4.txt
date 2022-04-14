@@ -1,20 +1,16 @@
-another.txt
-DDL_olympics_new.sql
-f1.txt
 file.cpp
-foo.png
 go.sh
 lab4db.ddl
-op.txt
 opda.txt
-q1.cpp
+oppk.txt
+queries
 ra.txt
-random.py
+rafinal
 run.sh
 temp.c
-temp.cpp
-Connected to 2 with unique-ID 9461 on port 6000
-Connected to 3 with unique-ID 4080 on port 7000
-Found bar.pdf at 6931 with MD5 0 at depth 2
-Found queries at 8158 with MD5 0 at depth 2
-Found ra_final at 9461 with MD5 0 at depth 1
+temp2.cpp
+Connected to 3 with unique-ID 1939 on port 7000
+Connected to 4 with unique-ID 5294 on port 8000
+Found f1.txt at 5294 with MD5 0 at depth 1
+Found op.txt at 1939 with MD5 0 at depth 1
+Found random.py at 1939 with MD5 0 at depth 1

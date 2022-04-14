@@ -260,15 +260,11 @@ int main(int argc, char *argv[])
             notSentNNConfirmation = false;
         }
 
-        if (totalConfirmations == no_neighbors && totalNNConfirmations == no_neighbors && conDetails){
+        if (totalConfirmations == no_neighbors && totalNNConfirmations == no_neighbors && haveAllInfo){
             // cout<<"HI\n";
             // for (auto it : mapfd){
             //     close(it.second.second);
             // }
-            for (int j=0;j<fd_count;j++){
-                close(pfds[j].fd);
-            }
-            free(pfds);
             exit(1);
         }
 
@@ -361,7 +357,7 @@ int main(int argc, char *argv[])
                     for (int i=0;i<neighIDs.size();i++){
                         for (int j=0;j<neighbors.size();j++){
                             if (neighbors[j][0] == neighIDs[i]){
-                                cout<<"Connected to "<<neighIDs[i]<<" with unique-ID "<<neighbors[j][2]<<" on port "<<neighbors[j][1]<<"\n";
+                                cout<<"Connected to "<<neighIDs[i]<<" with unique-ID "<<neighbors[j][2]<<" on port "<<neighbors[j][1]<<endl;
                                 break;
                             }
                         }
@@ -405,20 +401,10 @@ int main(int argc, char *argv[])
                         if (!found){
                             ffound[file_names[i]].first = false;
                             // file_depths[file_names[i]] = 0;
-                            string msg = "1 ";
-                            msg += to_string(id);
-                            for (int j = 0;j<no_files;j++){
-                                msg += " ";
-                                msg += file_names[j];
-                            }
-                            for (auto it : mapfd){
-                                // cout<<"Asking "<<it.first<<"\n";
-                                if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
-                                    perror("send");
-                                }
-                            }
+                            
                             // Set askNeighbor to true
-                            askNeighbor = true;
+                            if (no_neighbors)
+                                askNeighbor = true;
                         }
                         else{
                             // Set depth to 1 because we found the file at our neighbor
@@ -426,10 +412,25 @@ int main(int argc, char *argv[])
                         }
                     }
 
+                    if (askNeighbor){
+                        string msg = "1 ";
+                        msg += to_string(id);
+                        for (int j = 0;j<no_files;j++){
+                            msg += " ";
+                            msg += file_names[j];
+                        }
+                        // cout<<"Send msg: "<<msg<<"\n";
+                        for (auto it : mapfd){
+                            // cout<<"Asking "<<it.first<<"\n";
+                            if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
+                                perror("send");
+                            }
+                        }
+                    }
                     // If we found all the files at our neighbors
                     if (!askNeighbor){
                         for (auto it : ffound){
-                            cout<<"Found "<<it.first<<" at "<<*(ffound[it.first].second.begin())<<" with MD5 0 at depth 1\n";
+                            cout<<"Found "<<it.first<<" at "<<(it.second.first ? *(ffound[it.first].second.begin()) : 0)<<" with MD5 0 at depth "<<(it.second.first ? 1 : 0)<<endl;
                         }
                         conDetails = true;
                         string msg = "3 ";
@@ -462,10 +463,10 @@ int main(int argc, char *argv[])
 
                     for (auto it : ffound){
                         if (it.second.first){
-                            cout<<"Found "<<it.first<<" at "<<*(ffound[it.first].second.begin())<<" with MD5 0 at depth "<<file_depths[it.first]<<"\n";
+                            cout<<"Found "<<it.first<<" at "<<*(ffound[it.first].second.begin())<<" with MD5 0 at depth "<<file_depths[it.first]<<endl;
                         }
                         else{
-                            cout<<"Found "<<it.first<<" at 0 with MD5 0 at depth 0\n";
+                            cout<<"Found "<<it.first<<" at 0 with MD5 0 at depth 0"<<endl;
                         }
                     }
 
@@ -592,6 +593,7 @@ int main(int argc, char *argv[])
                             // Files that are being searched
                             vector<string> files_to_search;
                             // If we've received files names from our neighbors
+                            // cout<<"Msg 1: "<<buf<<"\n";
                             if (haveNeighborFiles) {
                                 // cout<<"I've files\n";
                                 
@@ -640,7 +642,8 @@ int main(int argc, char *argv[])
                         // Reply we receive from the neighbor
                         else if (msg_type == 2){
                             // This neighbor has replied
-                            cout<<buf<<"\n";
+                            // cout<<"Msg 2: "<<buf<<"\n";
+
                             neighborsAnswered[nid].first = true;
                             for (int j=2;j<seglist.size();j++){
                                 // Unique id of client where it found the file
@@ -662,37 +665,3 @@ int main(int argc, char *argv[])
     
     return 0;
 }
-
-
-
-
-
-
-
-// string exec(const char* cmd) {
-//     array<char, 128> buffer;
-//     string result;
-//     unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-//     if (!pipe) {
-//         throw runtime_error("popen() failed!");
-//     }
-//     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-//         result += buffer.data();
-//     }
-//     return result;
-// }
-
-
-// //phase-3 addition
-// void send_file(FILE *fp, int sockfd){
-//   int n;
-//   char data[SIZE] = {0};
- 
-//   while(fgets(data, SIZE, fp) != NULL) {
-//     if (send(sockfd, data, sizeof(data), 0) == -1) {
-//       perror("[-]Error in sending file.");
-//       exit(1);
-//     }
-//     bzero(data, SIZE);
-//   }
-// }

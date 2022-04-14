@@ -183,6 +183,19 @@ void del_from_pfds(struct pollfd pfds[], int i, int *fd_count)
 
     (*fd_count)--;
 }
+long int findSize(char* file_loc)
+{
+    FILE* fp = fopen(file_loc, "r");
+    if (fp == NULL) {
+        printf("File Not Found!\n");
+        return -1;
+    }
+    fseek(fp, 0L, SEEK_END);
+    long int res = ftell(fp);
+    fclose(fp);
+
+    return res;
+}
 
 // phase3 addition
 void send_file(FILE *fp, int sockfd)
@@ -251,12 +264,18 @@ int main(int argc, char *argv[])
     // Mapping ids to unique id and socket descriptor
     map<int, pair<int, int>> mapfd;
     map<string, pair<bool, set<int>>> ffound;
+    int msg_size_recieved=0;
     map<string, pair<FILE *, int>> sending; // string file to be send its File pointer and sockfd
     for (int i = 0; i < my_files.size(); i++)
     {
         sending[my_files[i]] = {NULL, -1};
     }
 
+    map<string, int> file_size;
+    for(int i=0;i<no_files;i++){
+        file_size[file_names[i]]=-1;
+    }
+    
     map<int, vector<pair<FILE *, string>>> recieving; // socket fd to be recieved its File pointer and filename
     bool file_request_sended=false;
     map<string, bool> recieved;
@@ -392,7 +411,7 @@ int main(int argc, char *argv[])
                     {
                         if (neighbors[j][0] == neighIDs[i])
                         {
-                            cout << "Connected to " << neighIDs[i] << " with unique-ID " << neighbors[j][2] << " on port " << neighbors[j][1] << "\n";
+                            cout << "Connected to " << neighIDs[i] << " with unique-ID " << neighbors[j][2] << " on port " << neighbors[j][1] << endl;
                         }
                     }
                 }
@@ -440,6 +459,13 @@ int main(int argc, char *argv[])
         // ask_for_files if u got all info
         if (ask_for_files & !file_request_sended)
         {
+            for (auto it : ffound)
+            {
+                if (!it.second.first)
+                {
+                    recieved[it.first] = true;
+                }
+            }
             for (auto it : ffound)
             {
                 if (it.second.first)
@@ -534,11 +560,11 @@ int main(int argc, char *argv[])
                     string file_loc = argv[2];
                     file_loc += "Downloaded/";
                     file_loc += it.first;
-                    cout << "Found " << it.first << " at " << *(it.second.second.begin())<< " with MD5 " << find_md5(file_loc) << " at depth 1\n";
+                    cout << "Found " << it.first << " at " << *(it.second.second.begin())<< " with MD5 " << find_md5(file_loc) << " at depth 1"<<endl;
                 }
                 else
                 {
-                    cout << "Found " << it.first << " at " << *(it.second.second.begin()) << " with MD5 0 at depth 0\n";
+                    cout << "Found " << it.first << " at " << *(it.second.second.begin()) << " with MD5 0 at depth 0"<<endl;
                 }
             }
             string msg = "3 ";
@@ -580,6 +606,10 @@ int main(int argc, char *argv[])
                         {
                             msg += " ";
                             msg += my_files[i];
+                            string loc=argv[2];
+                            loc+=my_files[i];
+                            msg+=";";
+                            msg+=to_string(findSize(&loc[0]));
                         }
                         char *m = &msg[0];
                         if (send(newfd, m, strlen(m), 0) == -1)
@@ -617,21 +647,30 @@ int main(int argc, char *argv[])
                         {
                             if (nbytes < SIZE)
                             {
+                                msg_size_recieved=0;
                                 // cout << "recieved " << recieving[pfds[i].fd][0].second << " " << nbytes << endl;
                                 fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd][0].first);
                                 bzero(buf, 1024);
                                 fclose(recieving[pfds[i].fd][0].first);
                                 recieved[recieving[pfds[i].fd][0].second] = true;
                                 recieving[pfds[i].fd].erase(recieving[pfds[i].fd].begin());
-                                
                                 //ready to send more request for files
                                 file_request_sended=false;
                             }
                             else
                             {
+                                msg_size_recieved+=nbytes;
+                                // cout<<"recieving "<<recieving[pfds[i].fd][0].second<<" bytes got "<<msg_size_recieved<<" total size"<<file_size[recieving[pfds[i].fd][0].second]<<endl;
                                 fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd][0].first);
                                 // fprintf(recieving[pfds[i].fd].first, "%s", buffer);
                                 bzero(buf, 1024);
+                                if(msg_size_recieved>=file_size[recieving[pfds[i].fd][0].second]){
+                                    msg_size_recieved=0;
+                                    fclose(recieving[pfds[i].fd][0].first);
+                                    recieved[recieving[pfds[i].fd][0].second] = true;
+                                    recieving[pfds[i].fd].erase(recieving[pfds[i].fd].begin());
+                                    file_request_sended=false;
+                                }
                             }
                         }
                         else
@@ -664,11 +703,15 @@ int main(int argc, char *argv[])
                                 // check the recieved file names are demanded by client?if yes add them
                                 for (int i = 3; i < seglist.size(); i++)
                                 {
+                                    string file_name=seglist[i].substr(0, seglist[i].find(';'));
+                                    int size=stoi(seglist[i].substr(seglist[i].find(';') + 1, seglist[i].size() - seglist[i].find(';') - 1));
+                                    // cout<<file_name<<" "<<size<<endl;
                                     for (int j = 0; j < no_files; j++)
                                     {
-                                        if (file_names[j] == seglist[i])
+                                        if (file_names[j] == file_name)
                                         {
                                             receivedAns[nid].second[j] = true;
+                                            file_size[file_name]=size;
                                         }
                                     }
                                 }

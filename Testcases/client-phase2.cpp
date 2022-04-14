@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
                 for (int i=0;i<neighIDs.size();i++){
                     for (int j=0;j<neighbors.size();j++){
                         if (neighbors[j][0] == neighIDs[i]){
-                            cout<<"Connected to "<<neighIDs[i]<<" with unique-ID "<<neighbors[j][2]<<" on port "<<neighbors[j][1]<<"\n";
+                            cout<<"Connected to "<<neighIDs[i]<<" with unique-ID "<<neighbors[j][2]<<" on port "<<neighbors[j][1]<<endl;
                         }
                     }
                 }
@@ -310,10 +310,10 @@ int main(int argc, char *argv[])
                     }
                     for (auto it : ffound){
                         if (it.second.first){
-                            cout<<"Found "<<it.first<<" at "<<*(it.second.second.begin())<<" with MD5 0 at depth 1\n";
+                            cout<<"Found "<<it.first<<" at "<<*(it.second.second.begin())<<" with MD5 0 at depth 1"<<endl;
                         }
                         else{
-                            cout<<"Found "<<it.first<<" at 0 with MD5 0 at depth 0\n";
+                            cout<<"Found "<<it.first<<" at 0 with MD5 0 at depth 0"<<endl;
                         }
                     }
                     conDetails = true;
@@ -421,37 +421,3 @@ int main(int argc, char *argv[])
     
     return 0;
 }
-
-
-
-
-
-
-
-// string exec(const char* cmd) {
-//     array<char, 128> buffer;
-//     string result;
-//     unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-//     if (!pipe) {
-//         throw runtime_error("popen() failed!");
-//     }
-//     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-//         result += buffer.data();
-//     }
-//     return result;
-// }
-
-
-// //phase-3 addition
-// void send_file(FILE *fp, int sockfd){
-//   int n;
-//   char data[SIZE] = {0};
- 
-//   while(fgets(data, SIZE, fp) != NULL) {
-//     if (send(sockfd, data, sizeof(data), 0) == -1) {
-//       perror("[-]Error in sending file.");
-//       exit(1);
-//     }
-//     bzero(data, SIZE);
-//   }
-// }

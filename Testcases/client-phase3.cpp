@@ -183,6 +183,19 @@ void del_from_pfds(struct pollfd pfds[], int i, int *fd_count)
 
     (*fd_count)--;
 }
+long int findSize(char* file_loc)
+{
+    FILE* fp = fopen(file_loc, "r");
+    if (fp == NULL) {
+        printf("File Not Found!\n");
+        return -1;
+    }
+    fseek(fp, 0L, SEEK_END);
+    long int res = ftell(fp);
+    fclose(fp);
+
+    return res;
+}
 
 // phase3 addition
 void send_file(FILE *fp, int sockfd)
@@ -251,12 +264,18 @@ int main(int argc, char *argv[])
     // Mapping ids to unique id and socket descriptor
     map<int, pair<int, int>> mapfd;
     map<string, pair<bool, set<int>>> ffound;
+    int msg_size_recieved=0;
     map<string, pair<FILE *, int>> sending; // string file to be send its File pointer and sockfd
     for (int i = 0; i < my_files.size(); i++)
     {
         sending[my_files[i]] = {NULL, -1};
     }
 
+    map<string, int> file_size;
+    for(int i=0;i<no_files;i++){
+        file_size[file_names[i]]=-1;
+    }
+    
     map<int, vector<pair<FILE *, string>>> recieving; // socket fd to be recieved its File pointer and filename
     bool file_request_sended=false;
     map<string, bool> recieved;
@@ -266,7 +285,6 @@ int main(int argc, char *argv[])
     }
     bool output_printed = false;
     bool ask_for_files=false;
-    int timeout = 16;
 
     int listener;                       // Listening socket descriptor
     int newfd;                          // Newly accept()ed socket descriptor
@@ -311,16 +329,15 @@ int main(int argc, char *argv[])
     // Main loop
     for (;;)
     {
-        // if (totalConfirmations == no_neighbors && notSentNNConfirmation){
-        //     string msg = "4 ";
-        //     msg += to_string(id);
-        //     for (auto it : mapfd){
-        //         if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
-        //             perror("NNConfirm send");
-        //         }
-        //     }
-        //     notSentNNConfirmation = false;
-        // }
+        if (totalConfirmations == no_neighbors && output_printed){
+            for (int j=0;j<fd_count;j++){
+                close(pfds[j].fd);
+            }
+            free(pfds);
+            exit(1);
+        }
+
+
         int poll_count = poll(pfds, fd_count, 2500);
 
         if (poll_count == -1)
@@ -329,19 +346,6 @@ int main(int argc, char *argv[])
             // cout<<"POLL\n";
             exit(1);
         }
-
-        if (totalConfirmations == no_neighbors && output_printed){
-            // cout<<"HI\n";
-            // for (auto it : mapfd){
-            //     close(it.second.second);
-            // }
-            for (int j=0;j<fd_count;j++){
-                close(pfds[j].fd);
-            }
-            free(pfds);
-            exit(1);
-        }
-
         if (!allConnected)
         {
             bool allSuccess = true;
@@ -407,7 +411,7 @@ int main(int argc, char *argv[])
                     {
                         if (neighbors[j][0] == neighIDs[i])
                         {
-                            cout << "Connected to " << neighIDs[i] << " with unique-ID " << neighbors[j][2] << " on port " << neighbors[j][1] << "\n";
+                            cout << "Connected to " << neighIDs[i] << " with unique-ID " << neighbors[j][2] << " on port " << neighbors[j][1] << endl;
                         }
                     }
                 }
@@ -455,6 +459,13 @@ int main(int argc, char *argv[])
         // ask_for_files if u got all info
         if (ask_for_files & !file_request_sended)
         {
+            for (auto it : ffound)
+            {
+                if (!it.second.first)
+                {
+                    recieved[it.first] = true;
+                }
+            }
             for (auto it : ffound)
             {
                 if (it.second.first)
@@ -522,7 +533,6 @@ int main(int argc, char *argv[])
                 break;
             }
         }
-
         if (allRecieved & !output_printed)
         {
             map<string, pair<bool, set<int>>> ffound; // file found set is nid it is found
@@ -550,18 +560,18 @@ int main(int argc, char *argv[])
                     string file_loc = argv[2];
                     file_loc += "Downloaded/";
                     file_loc += it.first;
-                    cout << "Found " << it.first << " at " << *(it.second.second.begin())<< " with MD5 " << find_md5(file_loc) << " at depth 1\n";
+                    cout << "Found " << it.first << " at " << *(it.second.second.begin())<< " with MD5 " << find_md5(file_loc) << " at depth 1"<<endl;
                 }
                 else
                 {
-                    cout << "Found " << it.first << " at " << *(it.second.second.begin()) << " with MD5 0 at depth 0\n";
+                    cout << "Found " << it.first << " at " << *(it.second.second.begin()) << " with MD5 0 at depth 0"<<endl;
                 }
             }
             string msg = "3 ";
             msg += to_string(id);
             for (auto it : mapfd){
                 if (send(mapfd[it.first].second, msg.c_str(), msg.length(), 0) == -1){
-                    perror("Line 564");
+                    perror("Line 422");
                 }
             }
 
@@ -596,6 +606,10 @@ int main(int argc, char *argv[])
                         {
                             msg += " ";
                             msg += my_files[i];
+                            string loc=argv[2];
+                            loc+=my_files[i];
+                            msg+=";";
+                            msg+=to_string(findSize(&loc[0]));
                         }
                         char *m = &msg[0];
                         if (send(newfd, m, strlen(m), 0) == -1)
@@ -616,7 +630,7 @@ int main(int argc, char *argv[])
                         // Got error or connection closed by client
                         if (nbytes == 0)
                         {
-                            //Connection closed
+                            // Connection closed
                             // printf("pollserver: socket %d hung up\n", sender_fd);
                         }
                         else
@@ -633,21 +647,30 @@ int main(int argc, char *argv[])
                         {
                             if (nbytes < SIZE)
                             {
+                                msg_size_recieved=0;
                                 // cout << "recieved " << recieving[pfds[i].fd][0].second << " " << nbytes << endl;
                                 fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd][0].first);
                                 bzero(buf, 1024);
                                 fclose(recieving[pfds[i].fd][0].first);
                                 recieved[recieving[pfds[i].fd][0].second] = true;
                                 recieving[pfds[i].fd].erase(recieving[pfds[i].fd].begin());
-                                
                                 //ready to send more request for files
                                 file_request_sended=false;
                             }
                             else
                             {
+                                msg_size_recieved+=nbytes;
+                                // cout<<"recieving "<<recieving[pfds[i].fd][0].second<<" bytes got "<<msg_size_recieved<<" total size"<<file_size[recieving[pfds[i].fd][0].second]<<endl;
                                 fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd][0].first);
                                 // fprintf(recieving[pfds[i].fd].first, "%s", buffer);
                                 bzero(buf, 1024);
+                                if(msg_size_recieved>=file_size[recieving[pfds[i].fd][0].second]){
+                                    msg_size_recieved=0;
+                                    fclose(recieving[pfds[i].fd][0].first);
+                                    recieved[recieving[pfds[i].fd][0].second] = true;
+                                    recieving[pfds[i].fd].erase(recieving[pfds[i].fd].begin());
+                                    file_request_sended=false;
+                                }
                             }
                         }
                         else
@@ -680,11 +703,15 @@ int main(int argc, char *argv[])
                                 // check the recieved file names are demanded by client?if yes add them
                                 for (int i = 3; i < seglist.size(); i++)
                                 {
+                                    string file_name=seglist[i].substr(0, seglist[i].find(';'));
+                                    int size=stoi(seglist[i].substr(seglist[i].find(';') + 1, seglist[i].size() - seglist[i].find(';') - 1));
+                                    // cout<<file_name<<" "<<size<<endl;
                                     for (int j = 0; j < no_files; j++)
                                     {
-                                        if (file_names[j] == seglist[i])
+                                        if (file_names[j] == file_name)
                                         {
                                             receivedAns[nid].second[j] = true;
+                                            file_size[file_name]=size;
                                         }
                                     }
                                 }
@@ -711,9 +738,6 @@ int main(int argc, char *argv[])
                             else if (seglist[0] == "3"){
                                 totalConfirmations ++;
                             }
-                            // else if (seglist[0] == "4"){
-                            //     totalNNConfirmations ++;
-                            // }
                         }
                     }
                 }
@@ -723,5 +747,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-//./client-phase4 ./tc4_0/client4-config.txt ./tc4_0/files/client4/

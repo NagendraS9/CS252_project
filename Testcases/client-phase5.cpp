@@ -40,6 +40,19 @@ string find_md5(string loc)
     string res = exec(cmd);
     return res.substr(0, res.find(' '));
 }
+long int findSize(char* file_loc)
+{
+    FILE* fp = fopen(file_loc, "r");
+    if (fp == NULL) {
+        printf("File Not Found!\n");
+        return -1;
+    }
+    fseek(fp, 0L, SEEK_END);
+    long int res = ftell(fp);
+    fclose(fp);
+
+    return res;
+}
 void send_file(FILE *fp, int sockfd)
 {
     int n;
@@ -252,6 +265,10 @@ int main(int argc, char *argv[])
     {
         sending[my_files[i]] = {NULL, -1};
     }
+    map<string, int> file_size;
+    for(int i=0;i<no_files;i++){
+        file_size[file_names[i]]=-1;
+    }
 
     map<int, pair<FILE *, string>> recieving; // from sock_desc to be recieved its File pointer and filename
     map<string, bool> recieved;               // bool recieved?int unique id?
@@ -262,7 +279,7 @@ int main(int argc, char *argv[])
     bool output_printed = false;
     bool connected_output_printed = false;
     bool ask_for_files = false;
-    // int timeout = 10;
+    int timeout = 10;
     // List all the files in the given directory
     // listFiles(argv[2]);
     int listener; // Listening socket descriptor
@@ -306,7 +323,7 @@ int main(int argc, char *argv[])
     int neigh_listened = 0;
     // Ask the neighbors for files of their neighbors
     bool askNeighbor = false;
-    map<int, vector<string>> neighborFiles;
+    map<int, vector<pair<string,int>>> neighborFiles; //name of file and size
 
     // Has the neighbors answered to our search request?
     map<int, pair<bool, vector<pair<int, int>>>> neighborsAnswered;
@@ -326,52 +343,43 @@ int main(int argc, char *argv[])
     {
         file_depths[file_names[i]] = 0;
     }
-
+    int msg_size_recieved=0;
     // The neighbors to which our reply is pending to their search request of searching our neighbors
     vector<pair<int, vector<string>>> toSend;
     int totalConfirmations = 0, totalNNConfirmations = 0, totalNN = 0;
     bool notSentNNConfirmation = true;
     bool printedConnectionInfo = false;
     bool haveAllInfo = false;
-    int timeout = 30;
     // Main loop
     for (;;)
     {
-        if (output_printed){
-            timeout --;
-            if (timeout == 0){
-                exit(1);
+        if (totalConfirmations == no_neighbors && notSentNNConfirmation)
+        {
+            string msg = "4 ";
+            msg += to_string(id);
+            for (auto it : mapfd)
+            {
+                if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1)
+                {
+                    perror("NNConfirm send");
+                }
             }
-            sleep(1);
+            notSentNNConfirmation = false;
         }
 
-        // if (totalConfirmations == no_neighbors && notSentNNConfirmation)
-        // {
-        //     string msg = "4 ";
-        //     msg += to_string(id);
-        //     for (auto it : mapfd)
-        //     {
-        //         if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1)
-        //         {
-        //             perror("NNConfirm send");
-        //         }
-        //     }
-        //     notSentNNConfirmation = false;
-        // }
-
-        // if (totalConfirmations == no_neighbors && totalNNConfirmations == no_neighbors && output_printed)
-        // {
-        //     // cout<<"HI\n";
-        //     // for (auto it : mapfd){
-        //     //     close(it.second.second);
-        //     // }
-        //     for (int j = 0; j < fd_count; j++)
-        //     {
-        //         close(pfds[j].fd);
-        //     }
-        //     free(pfds);
-        //     exit(1);
-        // }
+        if (totalConfirmations == no_neighbors && totalNNConfirmations == no_neighbors && output_printed)
+        {
+            // cout<<"HI\n";
+            // for (auto it : mapfd){
+            //     close(it.second.second);
+            // }
+            for (int j = 0; j < fd_count; j++)
+            {
+                close(pfds[j].fd);
+            }
+            free(pfds);
+            exit(1);
+        }
 
         int poll_count = poll(pfds, fd_count, 2500);
 
@@ -394,13 +402,15 @@ int main(int argc, char *argv[])
                 for (int j = 0; j < files_to_search.size(); j++)
                 {
                     set<int> whoHas;
+                    int size;
                     // files_to_search.push_back(seglist[j]);
                     for (auto it : neighborFiles)
                     {
                         for (int k = 0; k < it.second.size(); k++)
                         {
-                            if (files_to_search[j] == it.second[k])
+                            if (files_to_search[j] == it.second[k].first)
                             {
+                                size=it.second[k].second;
                                 // Store unique id
                                 whoHas.insert(mapfd[it.first].first);
                             }
@@ -419,11 +429,13 @@ int main(int argc, char *argv[])
                                 msg += to_string(neighbors[i][1]);
                             }
                         }
+                        msg += ";";
+                        msg+=to_string(size);
                     }
                     else
                     {
                         // Nobody found so 0
-                        msg += " 0;0";
+                        msg += " 0;0;0";
                     }
                 }
                 if (send(mapfd[toSend[i].first].second, &msg[0], msg.length(), 0) == -1)
@@ -503,7 +515,7 @@ int main(int argc, char *argv[])
                         {
                             if (neighbors[j][0] == neighIDs[i])
                             {
-                                cout << "Connected to " << neighIDs[i] << " with unique-ID " << neighbors[j][2] << " on port " << neighbors[j][1] << "\n";
+                                cout << "Connected to " << neighIDs[i] << " with unique-ID " << neighbors[j][2] << " on port " << neighbors[j][1] << endl;
                             }
                         }
                     }
@@ -573,10 +585,10 @@ int main(int argc, char *argv[])
                             msg += " ";
                             msg += file_names[j];
                         }
-                        // cout<<"Send msg: "<<msg<<"\n";
+                        // cout<<"Send msg: "<<msg<<endl;
                         for (auto it : mapfd)
                         {
-                            // cout<<"Asking "<<it.first<<"\n";
+                            // cout<<"Asking "<<it.first<<endl;
                             if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1)
                             {
                                 perror("send");
@@ -624,12 +636,19 @@ int main(int argc, char *argv[])
         // cout<<ask_for_files<<file_request_sended<<endl;
         if (ask_for_files && !file_request_sended)
         {
+            for (auto it : ffound)
+            {
+                if (!it.second.first)
+                {
+                    recieved[it.first] = true;
+                }
+            }
             // cout<<1<<endl;
             for (auto it : ffound_copy)
             {
                 if (it.second.first)
                 {
-                    // cout<<"Found "<<it.first<<" at "<<*(ffound_copy[it.first].second.begin())<<" with MD5 0 at depth "<<file_depths[it.first]<<"\n";
+                    // cout<<"Found "<<it.first<<" at "<<*(ffound_copy[it.first].second.begin())<<" with MD5 0 at depth "<<file_depths[it.first]<<endl;
                     if (file_depths[it.first] == 1)
                     {
                         string msg = "-1 ";
@@ -794,11 +813,11 @@ int main(int argc, char *argv[])
                         string file_loc = argv[2];
                         file_loc += "Downloaded/";
                         file_loc += it.first;
-                        cout << "Found " << it.first << " at " << *(ffound[it.first].second.begin()) << " with MD5 " << find_md5(file_loc) << " at depth " << file_depths[it.first] << "\n";
+                        cout << "Found " << it.first << " at " << *(ffound[it.first].second.begin()) << " with MD5 " << find_md5(file_loc) << " at depth " << file_depths[it.first] << endl;
                     }
                     else
                     {
-                        cout << "Found " << it.first << " at 0 with MD5 0 at depth 0\n";
+                        cout << "Found " << it.first << " at 0 with MD5 0 at depth 0"<<endl;
                     }
                 }
                 string msg = "3 ";
@@ -847,6 +866,11 @@ int main(int argc, char *argv[])
                             {
                                 msg += " ";
                                 msg += my_files[j];
+                                string loc=argv[2];
+                                loc+=my_files[j];
+                                msg+=";";
+                                // cout<<"868"<<endl;
+                                msg+=to_string(findSize(&loc[0]));
                             }
                             char *m = &msg[0];
                             if (send(newfd, m, strlen(m), 0) == -1)
@@ -890,6 +914,7 @@ int main(int argc, char *argv[])
                         {
                             if (nbytes < SIZE)
                             {
+                                msg_size_recieved=0;
                                 // cout<<"recieved"<<nbytes<<endl;
                                 fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd].first);
                                 bzero(buf, 1024);
@@ -905,9 +930,19 @@ int main(int argc, char *argv[])
                             }
                             else
                             {
+                                msg_size_recieved+=nbytes;
+                                // cout<<"930"<<endl;
                                 fwrite(buf, sizeof(char), nbytes, recieving[pfds[i].fd].first);
                                 // fprintf(recieving[pfds[i].fd].first, "%s", buffer);
                                 bzero(buf, 1024);
+                                if(msg_size_recieved>=file_size[recieving[pfds[i].fd].second]){
+                                    // cout<<"hii "<<file_size[recieving[pfds[i].fd].second]<<endl;
+                                    msg_size_recieved=0;
+                                    fclose(recieving[pfds[i].fd].first);
+                                    recieving[pfds[i].fd].first = NULL;
+                                    recieved[recieving[pfds[i].fd].second] = true;
+                                    file_request_sended = false;
+                                }
                             }
                         }
                         else
@@ -957,17 +992,23 @@ int main(int argc, char *argv[])
                                     }
                                 }
                                 // check the recieved file names are demanded by client?if yes add them
+                                // cout<<991<<endl;
                                 for (int j = 3; j < seglist.size(); j++)
                                 {
-                                    neighborFiles[nid].push_back(seglist[j]);
+                                    string file_name=seglist[j].substr(0, seglist[j].find(';'));
+                                    int size=stoi(seglist[j].substr(seglist[j].find(';') + 1, seglist[j].size() - seglist[j].find(';') - 1));
+                                    // cout<<file_name<<" "<<size<<endl;
+                                    neighborFiles[nid].push_back({file_name,size});
                                     for (int k = 0; k < no_files; k++)
                                     {
-                                        if (file_names[k] == seglist[j])
+                                        if (file_names[k] == file_name)
                                         {
                                             receivedAns[nid].second[k] = true;
+                                            file_size[file_name]=size;
                                         }
                                     }
                                 }
+                                // cout<<1006<<endl;
                             }
 
                             // Message sent by a sent to ask its neighbor if their neighbor have the files
@@ -989,19 +1030,22 @@ int main(int argc, char *argv[])
                                     {
                                         set<int> whoHas;
                                         files_to_search.push_back(seglist[j]);
-
+                                        int size;
                                         // Check if any neighbor has this file
+                                        // cout<<1030<<endl;
                                         for (auto it : neighborFiles)
                                         {
                                             for (int k = 0; k < it.second.size(); k++)
                                             {
-                                                if (seglist[j] == it.second[k])
+                                                if (seglist[j] == it.second[k].first)
                                                 {
+                                                    size=it.second[k].second;
                                                     // Store its unique id
                                                     whoHas.insert(mapfd[it.first].first);
                                                 }
                                             }
                                         }
+                                        // cout<<1045<<endl;
                                         if (!whoHas.empty())
                                         {
                                             msg += " ";
@@ -1016,10 +1060,12 @@ int main(int argc, char *argv[])
                                                     msg += to_string(neighbors[i][1]);
                                                 }
                                             }
+                                            msg += ";";
+                                            msg+=to_string(size);
                                         }
                                         else
                                         {
-                                            msg += " 0;0";
+                                            msg += " 0;0;0";
                                         }
                                     }
                                     if (send(pfds[i].fd, &msg[0], msg.length(), 0) == -1)
@@ -1046,11 +1092,25 @@ int main(int argc, char *argv[])
                                 nid = stoi(seglist[1]);
                                 // This neighbor has replied
                                 neighborsAnswered[nid].first = true;
+                                // cout<<buf<<endl;
                                 for (int j = 2; j < seglist.size(); j++)
                                 {
+                                    vector<string> result;
+                                    stringstream ss (seglist[j]);
+                                    string item;
+                                    char delim=';';
+
+                                    while (getline (ss, item, delim)) {
+                                        result.push_back (item);
+                                    }
+                                    // cout<<result[0]<<endl;                                   
                                     // Unique id of client where it found the file
-                                    neighborsAnswered[nid].second[j - 2].first = stoi(seglist[j].substr(0, seglist[j].find(';')));
-                                    neighborsAnswered[nid].second[j - 2].second = stoi(seglist[j].substr(seglist[j].find(';') + 1, seglist[j].size() - seglist[j].find(';') - 1));
+                                    neighborsAnswered[nid].second[j - 2].first = stoi(result[0]);
+                                    neighborsAnswered[nid].second[j - 2].second = stoi(result[1]);
+                                    if(stoi(result[0])!=0){
+                                        file_size[file_names[j-2]]=stoi(result[2]);
+                                        // cout<<"size set"<<result[0]<<" "<<result[2]<<endl;
+                                    }
                                 }
                             }
                             else if (msg_type == 3)

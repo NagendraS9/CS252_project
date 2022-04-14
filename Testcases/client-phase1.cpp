@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
                 for (int i=0;i<neighIDs.size();i++){
                     for (int j=0;j<neighbors.size();j++){
                         if (neighbors[j][0] == neighIDs[i]){
-                            cout<<"Connected to "<<neighIDs[i]<<" with unique-ID "<<neighbors[j][2]<<" on port "<<neighbors[j][1]<<"\n";
+                            cout<<"Connected to "<<neighIDs[i]<<" with unique-ID "<<neighbors[j][2]<<" on port "<<neighbors[j][1]<<endl;
                         }
                     }
                 }
