@@ -89,7 +89,7 @@ void listFiles(const char *dirname, vector<string> *my_files)
             if (d_name != "." && d_name != ".." && d_name != "Downloaded")
             {
                 my_files->push_back(ent->d_name);
-                printf("%s\n", ent->d_name);
+                cout<<ent->d_name<<endl;
             }
         }
         closedir(dir);
@@ -117,7 +117,8 @@ int get_listener_socket(const char *IP, const char *PORT)
     hints.ai_flags = AI_PASSIVE;
     if ((rv = getaddrinfo(IP, PORT, &hints, &ai)) != 0)
     {
-        fprintf(stderr, "selectserver: %s\n", gai_strerror(rv));
+        fprintf(stderr, "selectserver: %s", gai_strerror(rv));
+        cout<<endl;
         exit(1);
     }
 
@@ -187,7 +188,8 @@ long int findSize(char* file_loc)
 {
     FILE* fp = fopen(file_loc, "r");
     if (fp == NULL) {
-        printf("File Not Found!\n");
+        printf("File Not Found!");
+        cout<<endl;
         return -1;
     }
     fseek(fp, 0L, SEEK_END);
@@ -232,14 +234,16 @@ int main(int argc, char *argv[])
 {
     if (argc != 3)
     {
-        fprintf(stderr, "Usage: (executable argument1-config-file argument2-directory-path)\n");
+        fprintf(stderr, "Usage: (executable argument1-config-file argument2-directory-path)");
+        cout<<endl;
         return 1;
     }
     ifstream file;
     file.open(argv[1]);
     if (!file)
     {
-        cerr << "Error: file couldn't be opened\n";
+        cerr << "Error: file couldn't be opened";
+        cout<<endl;
         return 1;
     }
 
@@ -307,7 +311,8 @@ int main(int argc, char *argv[])
 
     if (listener == -1)
     {
-        fprintf(stderr, "error getting listening socket\n");
+        fprintf(stderr, "error getting listening socket");
+        cout<<endl;
         exit(1);
     }
 
@@ -321,6 +326,7 @@ int main(int argc, char *argv[])
     // conDetails = true if we've printed the connection details
     // allConnected = true if all the connections have been made
     bool allConnected = false, conDetails = false;
+    int connected_confirmations = 0;
     int totalConfirmations = 0, totalNNConfirmations = 0, totalNN = 0;
     bool notSentNNConfirmation = true;
     bool printedConnectionInfo = false;
@@ -365,7 +371,8 @@ int main(int argc, char *argv[])
 
                     if ((status = getaddrinfo(LOOPBACK, to_string(neighbors[i][1]).c_str(), &hints, &res)) != 0)
                     {
-                        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+                        fprintf(stderr, "getaddrinfo: %s", gai_strerror(status));
+                        cout<<endl;
                         return 2;
                     }
                     // make a socket:
@@ -450,19 +457,24 @@ int main(int argc, char *argv[])
                         }
                     }
                     conDetails = true;
-                    // if(allConnected && allSend){
-                    //     exit(1);
-                    // }
+                    for (auto it : mapfd){
+                        string msg = "4";
+                        if (send(it.second.second, msg.c_str(), msg.length(), 0) == -1){
+                            perror("Error sending confirmation");
+                        }
+                    }
                 }
             }
         }
+
         // ask_for_files if u got all info
-        if (ask_for_files & !file_request_sended)
+        if (connected_confirmations == no_neighbors && ask_for_files && !file_request_sended)
         {
             for (auto it : ffound)
             {
                 if (!it.second.first)
                 {
+                    // cout<<it.first<<" 466"<<endl;
                     recieved[it.first] = true;
                 }
             }
@@ -616,6 +628,7 @@ int main(int argc, char *argv[])
                         {
                             perror("send");
                         }
+                        // cout<<"details send"<<endl;
                     }
                 }
                 else
@@ -737,6 +750,9 @@ int main(int argc, char *argv[])
                             }
                             else if (seglist[0] == "3"){
                                 totalConfirmations ++;
+                            }
+                            else if (seglist[0] == "4"){
+                                connected_confirmations ++;
                             }
                         }
                     }
